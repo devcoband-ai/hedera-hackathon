@@ -1,34 +1,24 @@
-# Hedera Hackathon — Provenance as a Service
+# README
 
-**AI made the music. The blockchain proves I'm the artist.**
+This README would normally document whatever steps are necessary to get the
+application up and running.
 
-## Concept
+Things you may want to cover:
 
-A music provenance platform that uses Hedera Consensus Service to create immutable proof of human creative involvement in AI-assisted music production.
+* Ruby version
 
-Every creative decision — the prompt, the lyric edit, the rejection, the final pick — is a timestamped message on a Hedera topic. The result: a provenance record that proves human artistry, solving the distribution gatekeeping problem for AI-assisted music.
+* System dependencies
 
-## Stack
+* Configuration
 
-- **Suno** — AI music generation
-- **Claude (DevCo)** — Platform intelligence, creative workflow
-- **Grok** — Promotion / marketing layer (TBD)
-- **Hedera Consensus Service** — Immutable provenance chain
-- **DevCo Platform** — Rails-based creative workflow engine
+* Database creation
 
-## How It Works
+* Database initialization
 
-1. Create a Hedera topic for each song
-2. Log every creative iteration as a consensus message (prompts, edits, rejections, selections)
-3. Build a provenance DAG from the message history
-4. Export a provenance record for distribution submission
-5. Prove human involvement through the iteration trail — "the iteration IS the human contribution"
+* How to run the test suite
 
-## Team
+* Services (job queues, cache servers, search engines, etc.)
 
-- Jeff Highman
-- Jack Highman
+* Deployment instructions
 
-## Status
-
-🚧 Hackathon project — building
+* ...

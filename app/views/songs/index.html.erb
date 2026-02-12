@@ -1,0 +1,38 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>🎵 Songs</h1>
+  <%= link_to "New Song", new_song_path, class: "btn btn-primary" %>
+</div>
+
+<% Song::STATUSES.each do |status| %>
+  <% songs = @songs_by_status[status] %>
+  <% next unless songs&.any? %>
+
+  <h3 class="mt-4 mb-3">
+    <span class="badge bg-secondary"><%= status.titleize %></span>
+    <small class="text-muted">(<%= songs.size %>)</small>
+  </h3>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    <% songs.each do |song| %>
+      <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+          <div class="card-body">
+            <h5 class="card-title"><%= link_to song.title, song_path(song), class: "text-decoration-none text-light" %></h5>
+            <p class="card-text text-muted"><%= song.genre %> <%= "· #{song.album}" if song.album.present? %></p>
+            <div class="d-flex gap-2">
+              <small class="text-muted">🎵 <%= song.tracks.size %> tracks</small>
+              <small class="text-muted">👥 <%= song.contributions.size %> contributions</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @songs_by_status.empty? %>
+  <div class="text-center text-muted py-5">
+    <h4>No songs yet</h4>
+    <p>Create your first song to start tracking provenance.</p>
+  </div>
+<% end %>

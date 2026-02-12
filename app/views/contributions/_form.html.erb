@@ -1,0 +1,48 @@
+<%= form_with(model: [@song, contribution], class: "mb-4") do |f| %>
+  <% if contribution.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        <% contribution.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <%= f.label :role, class: "form-label" %>
+      <%= f.select :role, Contribution::ROLES.map { |r| [r.titleize, r] }, { prompt: "Select role..." }, class: "form-select", required: true %>
+    </div>
+    <div class="col-md-4 mb-3">
+      <%= f.label :actor_type, "Type", class: "form-label" %>
+      <%= f.select :actor_type, Contribution::ACTOR_TYPES.map { |t| [t.titleize, t] }, { prompt: "Select type..." }, class: "form-select", required: true %>
+    </div>
+    <div class="col-md-4 mb-3">
+      <%= f.label :actor_name, "Name", class: "form-label" %>
+      <%= f.text_field :actor_name, class: "form-control", required: true %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :description, class: "form-label" %>
+    <%= f.text_area :description, class: "form-control", rows: 3 %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :evidence, class: "form-label" %>
+    <%= f.text_area :evidence, class: "form-control", rows: 2, placeholder: "Link to prompt, session log, or other evidence" %>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <%= f.label :position, "Order", class: "form-label" %>
+      <%= f.number_field :position, class: "form-control", value: contribution.position || 0 %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", song_path(@song), class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>
