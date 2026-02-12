@@ -152,11 +152,28 @@ This maps directly to the Tokenize the World ontology:
 
 ---
 
-## The Father-Son Angle
-- Jeff: CTO, 30 years, wrote the book on tokenization, built the platform
-- Jack: Junior at UCF, CS student, Java/C background, learning Rails
-- Both musicians, both use Suno
-- **This is the hackathon project AND Jack's learning vehicle**
+## The Team
+
+**Jack Highman** — Team Lead
+- Junior at UCF, IT major
+- Vision holder — saw the provenance gap and proposed the solution
+- Building the Hedera integration (JavaScript SDK)
+
+**Jeff Highman** — Technical Advisor
+- CTO, 30 years in enterprise tech
+- Built the platform infrastructure
+- Author of "Tokenize the World" (ontology that maps to HCS)
+
+**Jon** — Domain Expert & Demo Presenter
+- President, Local Records USA (real music label)
+- Living the distributor gatekeeping problem daily
+- User for multimodal (Layer 2) and collaborative (Layer 3) demos
+- Recording the demo video — the label president walks judges through the product
+
+**Roles:**
+- Jack: vision + Hedera SDK integration
+- Jeff: platform engineering + architecture
+- Jon: domain expertise + demo + business validation
 
 ## Registration
 - Platform: https://hackathon.stackup.dev/web/events/hedera-hello-future-apex-hackathon-2026

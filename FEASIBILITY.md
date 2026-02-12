@@ -104,9 +104,10 @@ Suno does **not** have an official public API as of Feb 2026. Options:
 
 ## Does the team understand the problem space?
 
-- Jeff Highman: 30-year CTO, author of "Tokenize the World" (a book about primitives, ontology, assertions, and provenance), built the DevCo Platform
-- Jack Highman: CS student at UCF, Java/C background, learning Rails + modern web
-- Both are active Suno users and musicians
+- Jack Highman: UCF IT major, team lead, vision holder, building the Hedera SDK integration
+- Jeff Highman: 30-year CTO, technical advisor, author of "Tokenize the World" (primitives, ontology, assertions, provenance), built the DevCo Platform
+- Jon: President of Local Records USA — a real music label actively dealing with distributor gatekeeping. Domain expert, demo video presenter, user for multimodal and collaborative provenance layers
+- Active Suno users and musicians
 - The platform ontology (Entity → Assertion → Provenance) maps directly to Hedera's model (Topic → Message → Audit Trail)
 - This isn't a hackathon idea — it's a module of an existing, production platform being extended with Hedera integration
 
