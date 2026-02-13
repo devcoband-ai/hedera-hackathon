@@ -7,6 +7,8 @@ Rails.application.routes.draw do
     resource :provenance, only: [:show], controller: "provenance" do
       post :generate
       get "download/:id", action: :download, as: :download
+      get :package
+      get :certificate
     end
   end
 end

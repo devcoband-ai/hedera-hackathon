@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provenance Certificate — <%= @manifest[:song][:title] %></title>
+  <style>
+    :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --purple: #bc8cff; --orange: #d29922; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .header { text-align: center; padding: 40px 0 30px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+    .header h1 { font-size: 2em; margin-bottom: 8px; }
+    .header .subtitle { color: var(--muted); font-size: 1.1em; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .badge-green { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+    .badge-purple { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+    .badge-orange { background: rgba(210,153,34,0.15); color: var(--orange); border: 1px solid rgba(210,153,34,0.3); }
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+    .section h2 { font-size: 1.2em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .master-hash { background: linear-gradient(135deg, rgba(88,166,255,0.1), rgba(188,140,255,0.1)); border: 2px solid var(--accent); text-align: center; padding: 30px; }
+    .master-hash .label { color: var(--muted); font-size: 0.9em; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    .master-hash .hash { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.95em; word-break: break-all; color: var(--accent); padding: 12px; background: rgba(0,0,0,0.3); border-radius: 6px; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .meta-item .label { color: var(--muted); font-size: 0.85em; }
+    .meta-item .value { font-weight: 500; }
+    .meta-item .value a { color: var(--accent); text-decoration: none; }
+    .meta-item .value a:hover { text-decoration: underline; }
+    .artifact { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .artifact:last-child { border-bottom: none; }
+    .artifact-hash { font-family: monospace; font-size: 0.75em; color: var(--muted); word-break: break-all; max-width: 50%; }
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 20px; }
+    .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); }
+    .timeline-item.human::before { border-color: var(--green); }
+    .timeline-item.ai::before { border-color: var(--orange); }
+    .timeline-item .ti-header { font-weight: 600; }
+    .timeline-item .ti-meta { color: var(--muted); font-size: 0.85em; }
+    .timeline-item .ti-desc { color: var(--muted); margin-top: 4px; }
+    .verify-box { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.2); border-radius: 8px; padding: 20px; margin-top: 20px; }
+    .verify-box h3 { color: var(--green); margin-bottom: 12px; }
+    .verify-box code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    .verify-box pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; margin: 8px 0; }
+    .footer { text-align: center; color: var(--muted); font-size: 0.85em; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+    @media print { body { background: white; color: black; } .section { border-color: #ccc; } }
+    @media (max-width: 600px) { .meta-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📜 Provenance Certificate</h1>
+      <div class="subtitle"><%= @manifest[:song][:title] %></div>
+      <div style="margin-top: 12px;">
+        <span class="badge badge-green">Verified</span>
+        <span class="badge badge-purple"><%= @manifest[:hedera][:network] %></span>
+      </div>
+    </div>
+
+    <div class="section master-hash">
+      <div class="label">Master Hash (SHA-256)</div>
+      <div class="hash"><%= @master_hash %></div>
+      <div style="color: var(--muted); font-size: 0.85em; margin-top: 8px;">
+        This hash uniquely identifies the complete provenance manifest below.
+        <% if @manifest[:hedera][:topic_id] %>
+          <br>Stamped to Hedera topic <strong><%= @manifest[:hedera][:topic_id] %></strong>.
+        <% end %>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🎵 Song Metadata</h2>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="label">Title</div><div class="value"><%= @manifest[:song][:title] %></div></div>
+        <div class="meta-item"><div class="label">Genre</div><div class="value"><%= @manifest[:song][:genre] || "—" %></div></div>
+        <div class="meta-item"><div class="label">Album</div><div class="value"><%= @manifest[:song][:album] || "—" %></div></div>
+        <div class="meta-item"><div class="label">Status</div><div class="value"><%= @manifest[:song][:status]&.titleize || "—" %></div></div>
+        <div class="meta-item"><div class="label">Created</div><div class="value"><%= Time.parse(@manifest[:song][:created_at]).strftime("%B %d, %Y") %></div></div>
+        <% if @manifest[:hedera][:topic_id] %>
+          <div class="meta-item"><div class="label">Hedera Topic</div><div class="value"><a href="<%= @manifest[:hedera][:hashscan_url] %>" target="_blank"><%= @manifest[:hedera][:topic_id] %> ↗</a></div></div>
+        <% end %>
+      </div>
+      <% if @manifest[:song][:description].present? %>
+        <div style="margin-top: 12px; color: var(--muted);"><%= @manifest[:song][:description] %></div>
+      <% end %>
+    </div>
+
+    <% if @manifest[:artifacts].any? %>
+      <div class="section">
+        <h2>📁 Artifacts (<%= @manifest[:artifacts].length %>)</h2>
+        <% @manifest[:artifacts].each do |a| %>
+          <div class="artifact">
+            <div>
+              <strong><%= a[:name] %></strong> <span class="badge badge-purple">v<%= a[:version] %></span>
+              <div style="color: var(--muted); font-size: 0.85em;"><%= number_to_human_size(a[:size_bytes]) %></div>
+            </div>
+            <div class="artifact-hash"><%= a[:sha256] %></div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="section">
+      <h2>🔗 Provenance Chain (<%= @manifest[:provenance_chain].length %> entries)</h2>
+      <div class="timeline">
+        <% @manifest[:provenance_chain].each do |entry| %>
+          <div class="timeline-item <%= entry[:actor_type] %>">
+            <div class="ti-header">
+              <%= entry[:actor_name] %>
+              <span class="badge badge-<%= entry[:actor_type] == 'human' ? 'green' : entry[:actor_type] == 'ai' ? 'orange' : 'purple' %>"><%= entry[:actor_type] %></span>
+              <span class="badge badge-purple"><%= entry[:role] %></span>
+            </div>
+            <div class="ti-meta">
+              <% if entry[:sequence] %>Hedera seq #<%= entry[:sequence] %><% end %>
+              <% if entry[:timestamp] %> · <%= entry[:timestamp] %><% end %>
+            </div>
+            <div class="ti-desc"><%= entry[:description] %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @manifest[:on_chain_verification].any? %>
+      <div class="section">
+        <h2>⛓️ On-Chain Messages (<%= @manifest[:on_chain_verification].length %>)</h2>
+        <div style="color: var(--muted); font-size: 0.9em; margin-bottom: 12px;">
+          Messages fetched from Hedera mirror node for topic <strong><%= @manifest[:hedera][:topic_id] %></strong>
+        </div>
+        <% @manifest[:on_chain_verification].each_with_index do |msg, i| %>
+          <div style="padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9em;">
+            <strong>#<%= i + 1 %></strong>
+            <span style="color: var(--muted); font-family: monospace; font-size: 0.85em;">
+              <%= msg.is_a?(Hash) ? msg.to_json.truncate(120) : msg.to_s.truncate(120) %>
+            </span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="verify-box">
+      <h3>🔍 How to Verify</h3>
+      <p>This certificate is cryptographically verifiable. The master hash above is the SHA-256 digest of the complete manifest (all metadata, artifact hashes, and provenance chain).</p>
+
+      <p style="margin-top: 12px;"><strong>Step 1:</strong> Download the provenance package:</p>
+      <pre><a href="<%= song_provenance_package_path(@song, format: :json) %>" style="color: var(--accent);">📦 Download Package JSON</a></pre>
+
+      <p><strong>Step 2:</strong> Extract the <code>manifest</code> field and compute its SHA-256:</p>
+      <pre>cat package.json | jq '.manifest' | sha256sum</pre>
+
+      <p><strong>Step 3:</strong> Compare with the master hash. They should match.</p>
+
+      <% if @manifest[:hedera][:topic_id] %>
+        <p style="margin-top: 12px;"><strong>Step 4:</strong> Verify the master hash was stamped on-chain:</p>
+        <pre>Visit <a href="<%= @manifest[:hedera][:hashscan_url] %>" target="_blank" style="color: var(--accent);"><%= @manifest[:hedera][:hashscan_url] %></a></pre>
+        <p style="color: var(--muted); font-size: 0.9em;">Look for a message of type <code>provenance_certificate</code> containing the master hash.</p>
+      <% end %>
+
+      <p style="margin-top: 12px;"><strong>About SHA-256:</strong> SHA-256 is a cryptographic hash function that produces a unique 256-bit (64 hex character) digest. Even a single byte change in the input produces a completely different hash, making it impossible to tamper with the provenance data without detection.</p>
+    </div>
+
+    <div class="footer">
+      Generated <%= Time.parse(@manifest[:generated_at]).strftime("%B %d, %Y at %I:%M %p %Z") %> · Songproof Provenance System · Powered by Hedera HCS
+    </div>
+  </div>
+</body>
+</html>
