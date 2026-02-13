@@ -1,21 +1,30 @@
+require "net/http"
+require "json"
+
+# Calls the Node.js Hedera HCS microservice (port 3335)
+# See hedera/README.md for setup instructions
 class HederaService
-  # TODO: Integrate Hedera JavaScript SDK via Node.js subprocess or REST API
+  BASE_URL = ENV.fetch("HEDERA_SERVICE_URL", "http://localhost:3335")
 
   def self.create_topic(memo = "")
-    # Placeholder: will create a Hedera Consensus Service topic
-    # Returns topic_id string
-    "0.0.placeholder_#{SecureRandom.hex(4)}"
+    uri = URI("#{BASE_URL}/topics")
+    req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+    req.body = { memo: memo }.to_json
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+    JSON.parse(res.body)
   end
 
   def self.submit_message(topic_id, message)
-    # Placeholder: will submit a message to a Hedera topic
-    # Returns { sequence_number: N, timestamp: Time }
-    { sequence_number: rand(1..999), timestamp: Time.current }
+    uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
+    req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+    req.body = message.to_json
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+    JSON.parse(res.body)
   end
 
   def self.get_messages(topic_id)
-    # Placeholder: will read all messages from a Hedera topic
-    # Returns array of { sequence_number, message, timestamp }
-    []
+    uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
+    JSON.parse(res.body)
   end
 end

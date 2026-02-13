@@ -20,7 +20,9 @@
 
 <% if @song.hedera_topic_id.present? %>
   <div class="alert alert-info">
-    <strong>Hedera Topic:</strong> <%= @song.hedera_topic_id %>
+    <strong>🔗 Hedera Topic:</strong>
+    <%= link_to @song.hedera_topic_id, "https://hashscan.io/testnet/topic/#{@song.hedera_topic_id}", target: "_blank", class: "alert-link" %>
+    <small class="text-muted ms-2">(immutable provenance ledger)</small>
   </div>
 <% end %>
 
@@ -62,7 +64,7 @@
 <% if @contributions.any? %>
   <table class="table table-dark table-striped">
     <thead>
-      <tr><th>#</th><th>Role</th><th>Actor</th><th>Type</th><th>Description</th><th></th></tr>
+      <tr><th>#</th><th>Role</th><th>Actor</th><th>Type</th><th>Description</th><th>Hedera</th><th></th></tr>
     </thead>
     <tbody>
       <% @contributions.each do |c| %>
@@ -72,6 +74,11 @@
           <td><%= c.actor_name %></td>
           <td><span class="badge bg-<%= c.actor_type == 'human' ? 'success' : c.actor_type == 'ai' ? 'warning' : 'info' %>"><%= c.actor_type %></span></td>
           <td class="text-muted"><%= truncate(c.description, length: 60) %></td>
+          <td>
+            <% if c.hedera_sequence_number.present? %>
+              <span class="badge bg-info" title="Hedera seq #<%= c.hedera_sequence_number %>">#<%= c.hedera_sequence_number %></span>
+            <% end %>
+          </td>
           <td>
             <%= link_to "Edit", edit_song_contribution_path(@song, c), class: "btn btn-outline-light btn-sm" %>
             <%= button_to "×", song_contribution_path(@song, c), method: :delete, class: "btn btn-outline-danger btn-sm" %>

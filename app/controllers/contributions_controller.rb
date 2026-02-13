@@ -9,6 +9,23 @@ class ContributionsController < ApplicationController
   def create
     @contribution = @song.contributions.build(contribution_params)
     if @contribution.save
+      # Record contribution on Hedera if song has a topic
+      if @song.hedera_topic_id.present?
+        begin
+          result = HederaService.submit_message(@song.hedera_topic_id, {
+            role: @contribution.role,
+            actor_type: @contribution.actor_type,
+            actor_name: @contribution.actor_name,
+            description: @contribution.description
+          })
+          @contribution.update(
+            hedera_sequence_number: result["sequenceNumber"],
+            hedera_timestamp: result["timestamp"]
+          )
+        rescue => e
+          Rails.logger.warn("Hedera message submission failed: #{e.message}")
+        end
+      end
       redirect_to song_path(@song), notice: "Contribution added."
     else
       render :new, status: :unprocessable_entity

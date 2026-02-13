@@ -18,6 +18,13 @@ class SongsController < ApplicationController
   def create
     @song = Song.new(song_params)
     if @song.save
+      # Register song on Hedera Consensus Service
+      begin
+        result = HederaService.create_topic(@song.title)
+        @song.update(hedera_topic_id: result["topicId"]) if result["topicId"]
+      rescue => e
+        Rails.logger.warn("Hedera topic creation failed: #{e.message}")
+      end
       redirect_to song_path(@song), notice: "Song created."
     else
       render :new, status: :unprocessable_entity
