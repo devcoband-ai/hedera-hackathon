@@ -8,6 +8,7 @@ import {
   Client,
   TopicCreateTransaction,
   TopicMessageSubmitTransaction,
+  PrivateKey,
 } from "@hashgraph/sdk";
 
 const app = express();
@@ -27,7 +28,12 @@ if (!operatorId || !operatorKey) {
 
 const client =
   network === "mainnet" ? Client.forMainnet() : Client.forTestnet();
-client.setOperator(operatorId, operatorKey);
+
+// Support both ECDSA (0x-prefixed hex) and ED25519 key formats
+const privateKey = operatorKey.startsWith("0x")
+  ? PrivateKey.fromStringECDSA(operatorKey)
+  : PrivateKey.fromStringED25519(operatorKey);
+client.setOperator(operatorId, privateKey);
 
 // Mirror node base URL for reading messages
 const MIRROR_BASE =
