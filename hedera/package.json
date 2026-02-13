@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.51.0",
+    "@hiero-did-sdk/registrar": "^0.1.8",
+    "@hiero-did-sdk/resolver": "^0.1.8",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   }

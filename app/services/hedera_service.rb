@@ -44,6 +44,20 @@ class HederaService
     JSON.parse(res.body)
   end
 
+  def self.resolve_sentinel
+    uri = URI("#{BASE_URL}/sentinel")
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
+    JSON.parse(res.body)
+  end
+
+  def self.verify_credential(vc_json)
+    uri = URI("#{BASE_URL}/credentials/verify")
+    req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+    req.body = vc_json.is_a?(String) ? vc_json : vc_json.to_json
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+    JSON.parse(res.body)
+  end
+
   def self.get_messages(topic_id)
     uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
     res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }

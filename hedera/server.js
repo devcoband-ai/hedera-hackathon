@@ -5,12 +5,18 @@
 import "dotenv/config";
 import express from "express";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   Client,
   TopicCreateTransaction,
   TopicMessageSubmitTransaction,
   PrivateKey,
 } from "@hashgraph/sdk";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SENTINEL_PATH = path.join(__dirname, ".sentinel.json");
 
 const app = express();
 app.use(express.json());
@@ -42,7 +48,79 @@ const MIRROR_BASE =
     ? "https://mainnet.mirrornode.hedera.com"
     : "https://testnet.mirrornode.hedera.com";
 
+// --- Sentinel DID (Platform Identity) ---
+
+let sentinelState = null; // { did, topicId, didDocument }
+
+async function initSentinel() {
+  // Check if sentinel already exists on disk
+  if (fs.existsSync(SENTINEL_PATH)) {
+    try {
+      sentinelState = JSON.parse(fs.readFileSync(SENTINEL_PATH, "utf-8"));
+      console.log(`🛡️  Sentinel DID loaded: ${sentinelState.did}`);
+      return;
+    } catch (e) {
+      console.warn("⚠️  Corrupt .sentinel.json, recreating...");
+    }
+  }
+
+  // Create a new sentinel DID
+  console.log("🛡️  Creating Sentinel DID (platform identity)...");
+  const tx = new TopicCreateTransaction().setTopicMemo("DID:sentinel:ProvenanceStudio");
+  const response = await tx.execute(client);
+  const receipt = await response.getReceipt(client);
+  const topicId = receipt.topicId.toString();
+
+  const publicKeyHex = privateKey.publicKey.toStringRaw();
+  const did = `did:hedera:testnet:${publicKeyHex}_${topicId}`;
+
+  const didDocument = {
+    "@context": "https://www.w3.org/ns/did/v1",
+    id: did,
+    controller: did,
+    verificationMethod: [
+      {
+        id: `${did}#did-root-key`,
+        type: "EcdsaSecp256k1VerificationKey2019",
+        controller: did,
+        publicKeyHex: publicKeyHex,
+      },
+    ],
+    authentication: [`${did}#did-root-key`],
+    service: [
+      {
+        id: `${did}#platform`,
+        type: "PlatformIdentity",
+        serviceEndpoint: {
+          name: "Provenance Studio",
+          description: "Sentinel identity for platform-attested verifiable credentials",
+          createdAt: new Date().toISOString(),
+        },
+      },
+    ],
+  };
+
+  // Submit DID document to the topic
+  await submitToTopic(topicId, { type: "DIDDocument", ...didDocument });
+
+  sentinelState = { did, topicId, didDocument };
+  fs.writeFileSync(SENTINEL_PATH, JSON.stringify(sentinelState, null, 2));
+  console.log(`🛡️  Sentinel DID created: ${did} (topic: ${topicId})`);
+}
+
 // --- Routes ---
+
+// GET /sentinel — Return the sentinel DID and document
+app.get("/sentinel", (_req, res) => {
+  if (!sentinelState) {
+    return res.status(503).json({ error: "Sentinel DID not yet initialized" });
+  }
+  res.json({
+    did: sentinelState.did,
+    topicId: sentinelState.topicId,
+    didDocument: sentinelState.didDocument,
+  });
+});
 
 // POST /topics — Create a new HCS topic
 // Body: { memo: "optional memo" }
@@ -250,8 +328,9 @@ app.get("/artists/:topicId/did", async (req, res) => {
 });
 
 // POST /credentials — Issue a Verifiable Credential (provenance certificate)
-// Body: { issuerDid, issuerTopicId, songTitle, songTopicId, masterHash, artifacts[], contributionCount }
-// Returns: the full signed VC JSON
+// Body: { issuerDid, issuerTopicId, songTitle, songTopicId, masterHash, artifacts[], contributionCount, creators[] }
+// creators is optional: [{ did, role, share }] — shares must sum to 100
+// Returns: the full signed VC JSON with dual proof (issuer + sentinel)
 app.post("/credentials", async (req, res) => {
   try {
     const {
@@ -262,10 +341,26 @@ app.post("/credentials", async (req, res) => {
       masterHash,
       artifacts,
       contributionCount,
+      creators,
     } = req.body;
 
     if (!issuerDid || !songTopicId) {
       return res.status(400).json({ error: "issuerDid and songTopicId are required" });
+    }
+
+    // Validate creators shares if provided
+    let resolvedCreators = null;
+    if (creators && creators.length > 0) {
+      const totalShares = creators.reduce((sum, c) => sum + (c.share || 0), 0);
+      if (totalShares !== 100) {
+        return res.status(400).json({
+          error: `Creator shares must sum to 100, got ${totalShares}`,
+        });
+      }
+      resolvedCreators = creators;
+    } else {
+      // Default: single creator with 100% share
+      resolvedCreators = [{ did: issuerDid, role: "artist", share: 100 }];
     }
 
     // Build the W3C Verifiable Credential
@@ -283,6 +378,7 @@ app.post("/credentials", async (req, res) => {
         id: `hedera:testnet:topic:${songTopicId}`,
         type: "CreativeWork",
         title: songTitle || "Untitled",
+        creators: resolvedCreators,
         provenanceChain: {
           network: "testnet",
           topicId: songTopicId,
@@ -294,20 +390,39 @@ app.post("/credentials", async (req, res) => {
       },
     };
 
-    // Sign the VC with ECDSA operator key
+    // Sign the VC with ECDSA operator key (issuer signature)
     const vcPayload = JSON.stringify(vc);
     const vcHash = crypto.createHash("sha256").update(vcPayload).digest();
-    const signatureBytes = privateKey.sign(vcHash);
-    const signatureHex = Buffer.from(signatureBytes).toString("hex");
+    const issuerSignatureBytes = privateKey.sign(vcHash);
+    const issuerSignatureHex = Buffer.from(issuerSignatureBytes).toString("hex");
 
-    // Add proof to the VC
-    vc.proof = {
-      type: "EcdsaSecp256k1Signature2019",
-      created: new Date().toISOString(),
-      verificationMethod: `${issuerDid}#key-1`,
-      proofPurpose: "assertionMethod",
-      proofValue: signatureHex,
-    };
+    const now = new Date().toISOString();
+
+    // Build dual proof array: issuer + sentinel
+    const proofs = [
+      {
+        type: "EcdsaSecp256k1Signature2019",
+        created: now,
+        verificationMethod: `${issuerDid}#key-1`,
+        proofPurpose: "assertionMethod",
+        proofValue: issuerSignatureHex,
+      },
+    ];
+
+    // Add sentinel co-signature if sentinel is initialized
+    if (sentinelState) {
+      const sentinelSignatureBytes = privateKey.sign(vcHash); // sentinel key IS operator key
+      const sentinelSignatureHex = Buffer.from(sentinelSignatureBytes).toString("hex");
+      proofs.push({
+        type: "EcdsaSecp256k1Signature2019",
+        created: now,
+        verificationMethod: `${sentinelState.did}#did-root-key`,
+        proofPurpose: "authentication",
+        proofValue: sentinelSignatureHex,
+      });
+    }
+
+    vc.proof = proofs;
 
     // Submit VC to the song's topic (with chunking support)
     await submitToTopic(songTopicId, { type: "VerifiableCredential", credential: vc });
@@ -317,7 +432,7 @@ app.post("/credentials", async (req, res) => {
       await submitToTopic(issuerTopicId, { type: "VerifiableCredential", credential: vc });
     }
 
-    console.log(`✅ Issued VC ${vcId} for "${songTitle}"`);
+    console.log(`✅ Issued VC ${vcId} for "${songTitle}" with ${resolvedCreators.length} creator(s)`);
     res.json(vc);
   } catch (err) {
     console.error("❌ Issue credential error:", err.message);
@@ -325,15 +440,96 @@ app.post("/credentials", async (req, res) => {
   }
 });
 
+// POST /credentials/verify — Verify a Verifiable Credential
+// Body: the full VC JSON
+// Returns: { valid, checks[] }
+app.post("/credentials/verify", async (req, res) => {
+  try {
+    const vc = req.body;
+    const checks = [];
+
+    // 1. Check structure
+    if (!vc || !vc.proof || !vc.issuer || !vc.credentialSubject) {
+      return res.json({ valid: false, checks: [{ name: "structure", passed: false, detail: "Missing required VC fields" }] });
+    }
+    checks.push({ name: "structure", passed: true, detail: "VC has required fields" });
+
+    // 2. Check creators shares sum to 100
+    const creators = vc.credentialSubject.creators;
+    if (creators && creators.length > 0) {
+      const total = creators.reduce((sum, c) => sum + (c.share || 0), 0);
+      const sharesOk = total === 100;
+      checks.push({ name: "creator_shares", passed: sharesOk, detail: `Shares sum to ${total}` });
+      if (!sharesOk) {
+        return res.json({ valid: false, checks });
+      }
+    } else {
+      checks.push({ name: "creator_shares", passed: true, detail: "No explicit creators (single issuer assumed)" });
+    }
+
+    // 3. Verify signatures
+    // Extract VC without proof for hash verification
+    const { proof, ...vcWithoutProof } = vc;
+    const vcPayload = JSON.stringify(vcWithoutProof);
+    const vcHash = crypto.createHash("sha256").update(vcPayload).digest();
+
+    const proofs = Array.isArray(proof) ? proof : [proof];
+
+    for (const p of proofs) {
+      const sigBytes = Buffer.from(p.proofValue, "hex");
+      const publicKeyHex = privateKey.publicKey.toStringRaw();
+
+      // Verify using the operator's public key (in this demo, all keys are the operator key)
+      const verified = privateKey.publicKey.verify(vcHash, sigBytes);
+
+      const sigType = p.proofPurpose === "authentication" ? "sentinel" : "issuer";
+      checks.push({
+        name: `signature_${sigType}`,
+        passed: verified,
+        detail: `${sigType} signature (${p.verificationMethod}) ${verified ? "valid" : "invalid"}`,
+      });
+    }
+
+    // 4. Check sentinel attestation
+    const hasSentinelProof = proofs.some((p) => p.proofPurpose === "authentication");
+    checks.push({
+      name: "sentinel_attestation",
+      passed: hasSentinelProof,
+      detail: hasSentinelProof
+        ? "Sentinel co-signature present"
+        : "No sentinel co-signature found",
+    });
+
+    const allPassed = checks.every((c) => c.passed);
+    res.json({ valid: allPassed, checks });
+  } catch (err) {
+    console.error("❌ Verify credential error:", err.message);
+    res.status(500).json({ error: err.message, valid: false, checks: [] });
+  }
+});
+
 // Health check
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", network, operatorId });
+  res.json({
+    status: "ok",
+    network,
+    operatorId,
+    sentinel: sentinelState ? { did: sentinelState.did, topicId: sentinelState.topicId } : null,
+  });
 });
 
 // --- Start ---
 
 const PORT = process.env.PORT || 3335;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Hedera HCS service running on http://localhost:${PORT}`);
   console.log(`   Network: ${network} | Operator: ${operatorId}`);
+
+  // Initialize sentinel DID on startup
+  try {
+    await initSentinel();
+  } catch (err) {
+    console.error("❌ Sentinel initialization failed:", err.message);
+    console.error("   Service will continue without sentinel co-signing");
+  }
 });

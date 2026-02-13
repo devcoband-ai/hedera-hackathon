@@ -1,10 +1,11 @@
 require "digest"
 
 class ProvenancePackageService
-  def initialize(song, artist_did: nil, artist_topic_id: nil)
+  def initialize(song, artist_did: nil, artist_topic_id: nil, creators: nil)
     @song = song
     @artist_did = artist_did
     @artist_topic_id = artist_topic_id
+    @creators = creators # Array of { did:, role:, share: } or nil
   end
 
   def generate
@@ -94,7 +95,7 @@ class ProvenancePackageService
       # Issue a Verifiable Credential if artist DID info is available
       if @artist_did.present? && @artist_topic_id.present?
         begin
-          vc = HederaService.issue_credential(
+          vc_params = {
             issuerDid: @artist_did,
             issuerTopicId: @artist_topic_id,
             songTitle: @song.title,
@@ -102,12 +103,26 @@ class ProvenancePackageService
             masterHash: master_hash,
             artifacts: artifacts.map { |a| { type: "audio", name: a[:name], sha256: a[:sha256] } },
             contributionCount: chain.length
-          )
+          }
+
+          # Include creators for multi-party collaborative VCs
+          if @creators.present?
+            vc_params[:creators] = @creators
+          end
+
+          vc = HederaService.issue_credential(vc_params)
           package[:verifiable_credential] = vc
         rescue => e
           Rails.logger.warn "VC issuance failed: #{e.message}"
         end
       end
+    end
+
+    # Resolve sentinel info for display
+    begin
+      package[:sentinel] = HederaService.resolve_sentinel
+    rescue => e
+      Rails.logger.warn "Sentinel resolution failed: #{e.message}"
     end
 
     package

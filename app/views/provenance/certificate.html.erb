@@ -55,6 +55,9 @@
       <div style="margin-top: 12px;">
         <span class="badge badge-green">Verified</span>
         <span class="badge badge-purple"><%= @manifest[:hedera][:network] %></span>
+        <% if @package[:sentinel].present? %>
+          <span class="badge badge-green">🛡️ Sentinel Attested</span>
+        <% end %>
       </div>
     </div>
 
@@ -68,6 +71,51 @@
         <% end %>
       </div>
     </div>
+
+    <% if @package[:sentinel].present? %>
+      <div class="section" style="border: 2px solid var(--green); background: rgba(63,185,80,0.05);">
+        <h2>🛡️ Verified by Provenance Studio Sentinel</h2>
+        <p style="color: var(--muted); margin-bottom: 12px;">This credential was co-signed by the platform's sentinel identity, attesting that the creative workflow was verified through Provenance Studio.</p>
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="label">Sentinel DID</div>
+            <div class="value" style="font-family: monospace; font-size: 0.75em; word-break: break-all;"><%= @package[:sentinel]["did"] %></div>
+          </div>
+          <div class="meta-item">
+            <div class="label">Sentinel Topic</div>
+            <div class="value"><a href="https://hashscan.io/testnet/topic/<%= @package[:sentinel]["topicId"] %>" target="_blank" style="color: var(--accent);"><%= @package[:sentinel]["topicId"] %> ↗</a></div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @package[:verifiable_credential].present? %>
+      <% vc = @package[:verifiable_credential] %>
+      <% vc_creators = vc.dig("credentialSubject", "creators") || vc.dig(:credentialSubject, :creators) %>
+      <% if vc_creators.present? && vc_creators.length > 1 %>
+        <div class="section">
+          <h2>👥 Creators & Ownership</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border);">
+                <th style="text-align: left; padding: 8px 0; color: var(--muted);">Creator DID</th>
+                <th style="text-align: left; padding: 8px 0; color: var(--muted);">Role</th>
+                <th style="text-align: right; padding: 8px 0; color: var(--muted);">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% vc_creators.each do |creator| %>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 10px 0; font-family: monospace; font-size: 0.8em; word-break: break-all; max-width: 400px;"><%= creator["did"] || creator[:did] %></td>
+                  <td style="padding: 10px 0;"><span class="badge badge-purple"><%= creator["role"] || creator[:role] %></span></td>
+                  <td style="padding: 10px 0; text-align: right; font-weight: 600; color: var(--accent);"><%= creator["share"] || creator[:share] %>%</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    <% end %>
 
     <div class="section">
       <h2>🎵 Song Metadata</h2>
@@ -172,13 +220,33 @@
           <pre style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.8em; margin-top: 8px; max-height: 400px; overflow-y: auto;"><%= JSON.pretty_generate(vc) %></pre>
         </details>
 
+        <% vc_proofs = vc["proof"] || vc[:proof] %>
+        <% vc_proofs = [vc_proofs] unless vc_proofs.is_a?(Array) %>
+        <div style="margin-top: 16px;">
+          <strong style="color: var(--purple);">🔐 Dual Signature Verification</strong>
+          <% vc_proofs.each_with_index do |p, i| %>
+            <div style="margin-top: 8px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 6px; border-left: 3px solid <%= p["proofPurpose"] == "authentication" ? "var(--green)" : "var(--accent)" %>;">
+              <div style="font-weight: 600; font-size: 0.9em;">
+                <%= p["proofPurpose"] == "authentication" ? "🛡️ Sentinel Co-signature" : "✍️ Issuer Signature" %>
+                <span class="badge badge-green" style="margin-left: 6px;">Signed</span>
+              </div>
+              <div style="color: var(--muted); font-size: 0.8em; margin-top: 4px;">
+                Purpose: <code><%= p["proofPurpose"] || p[:proofPurpose] %></code><br>
+                Method: <code style="word-break: break-all;"><%= p["verificationMethod"] || p[:verificationMethod] %></code>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
         <div style="margin-top: 16px; padding: 12px; background: rgba(188,140,255,0.08); border-radius: 6px; border: 1px solid rgba(188,140,255,0.2);">
           <strong style="color: var(--purple);">🔐 VC Verification Steps:</strong>
           <ol style="margin-top: 8px; padding-left: 20px; color: var(--muted); font-size: 0.9em;">
             <li>Extract the VC JSON (without the <code>proof</code> field)</li>
             <li>Compute its SHA-256 hash</li>
-            <li>Verify the ECDSA signature in <code>proof.proofValue</code> using the issuer's public key</li>
-            <li>Resolve the issuer DID on Hedera to confirm the public key matches</li>
+            <li>Verify the issuer's ECDSA signature using their DID public key</li>
+            <li>Verify the sentinel's co-signature using the platform DID public key</li>
+            <li>Resolve both DIDs on Hedera to confirm the public keys match</li>
+            <li>Confirm creator ownership shares sum to 100%</li>
             <li>Check the credential subject references the correct song topic on <a href="https://hashscan.io/testnet/topic/<%= @manifest[:hedera][:topic_id] %>" target="_blank" style="color: var(--accent);">HashScan</a></li>
           </ol>
         </div>
