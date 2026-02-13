@@ -4,6 +4,7 @@
 
 import "dotenv/config";
 import express from "express";
+import crypto from "crypto";
 import {
   Client,
   TopicCreateTransaction,
@@ -116,6 +117,210 @@ app.get("/topics/:topicId/messages", async (req, res) => {
     res.json(messages);
   } catch (err) {
     console.error("❌ Get messages error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Helper: submit a message to a topic, chunking if > 1024 bytes ---
+async function submitToTopic(topicId, messageObj) {
+  const json = JSON.stringify(messageObj);
+  if (json.length <= 1024) {
+    await new TopicMessageSubmitTransaction()
+      .setTopicId(topicId)
+      .setMessage(json)
+      .execute(client);
+  } else {
+    const CHUNK_SIZE = 700; // keep well under 1024 after JSON wrapper overhead
+    const totalChunks = Math.ceil(json.length / CHUNK_SIZE);
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = json.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      await new TopicMessageSubmitTransaction()
+        .setTopicId(topicId)
+        .setMessage(
+          JSON.stringify({ _chunk: true, index: i, total: totalChunks, data: chunk })
+        )
+        .execute(client);
+    }
+  }
+}
+
+// --- DID / Verifiable Credential Routes ---
+
+// POST /artists — Register an artist DID
+// Body: { name: "Artist Name", influences: [] }
+// Returns: { did, topicId, didDocument }
+app.post("/artists", async (req, res) => {
+  try {
+    const { name, influences } = req.body || {};
+
+    // Create a dedicated HCS topic for this artist's DID
+    const tx = new TopicCreateTransaction().setTopicMemo(
+      `DID:artist:${name || "unknown"}`
+    );
+    const response = await tx.execute(client);
+    const receipt = await response.getReceipt(client);
+    const topicId = receipt.topicId.toString();
+
+    // Build the DID string: did:hedera:testnet:{publicKey}_{topicId}
+    const publicKeyHex = privateKey.publicKey.toStringRaw();
+    const did = `did:hedera:testnet:${publicKeyHex}_${topicId}`;
+
+    // Construct a minimal DID document
+    const didDocument = {
+      "@context": "https://www.w3.org/ns/did/v1",
+      id: did,
+      controller: did,
+      verificationMethod: [
+        {
+          id: `${did}#key-1`,
+          type: "EcdsaSecp256k1VerificationKey2019",
+          controller: did,
+          publicKeyHex: publicKeyHex,
+        },
+      ],
+      authentication: [`${did}#key-1`],
+      service: [
+        {
+          id: `${did}#artist-profile`,
+          type: "ArtistProfile",
+          serviceEndpoint: {
+            name: name || "Unknown Artist",
+            influences: influences || [],
+            registeredAt: new Date().toISOString(),
+          },
+        },
+      ],
+    };
+
+    // Submit DID document to the topic (with auto-chunking for >1024 byte messages)
+    await submitToTopic(topicId, { type: "DIDDocument", ...didDocument });
+
+    console.log(`✅ Registered artist DID: ${did} (topic: ${topicId})`);
+    res.json({ did, topicId, didDocument });
+  } catch (err) {
+    console.error("❌ Register artist error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /artists/:topicId/did — Resolve an artist DID from their topic
+app.get("/artists/:topicId/did", async (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const url = `${MIRROR_BASE}/api/v1/topics/${topicId}/messages?order=asc&limit=10`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Mirror node returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.messages || data.messages.length === 0) {
+      return res.status(404).json({ error: "No DID document found on this topic" });
+    }
+
+    // Try to find a complete DID document or reassemble chunks
+    const firstMsg = JSON.parse(
+      Buffer.from(data.messages[0].message, "base64").toString("utf-8")
+    );
+
+    if (firstMsg.type === "DIDDocument") {
+      // Complete document in one message
+      res.json(firstMsg);
+    } else if (firstMsg._chunk) {
+      // Reassemble chunked message
+      const chunks = [];
+      for (const m of data.messages) {
+        const parsed = JSON.parse(
+          Buffer.from(m.message, "base64").toString("utf-8")
+        );
+        if (parsed._chunk) {
+          chunks[parsed.index] = parsed.data;
+        }
+      }
+      const reassembled = JSON.parse(chunks.join(""));
+      res.json(reassembled);
+    } else {
+      res.status(404).json({ error: "No DID document found on this topic" });
+    }
+  } catch (err) {
+    console.error("❌ Resolve DID error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /credentials — Issue a Verifiable Credential (provenance certificate)
+// Body: { issuerDid, issuerTopicId, songTitle, songTopicId, masterHash, artifacts[], contributionCount }
+// Returns: the full signed VC JSON
+app.post("/credentials", async (req, res) => {
+  try {
+    const {
+      issuerDid,
+      issuerTopicId,
+      songTitle,
+      songTopicId,
+      masterHash,
+      artifacts,
+      contributionCount,
+    } = req.body;
+
+    if (!issuerDid || !songTopicId) {
+      return res.status(400).json({ error: "issuerDid and songTopicId are required" });
+    }
+
+    // Build the W3C Verifiable Credential
+    const vcId = `urn:uuid:${crypto.randomUUID()}`;
+    const vc = {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+      ],
+      id: vcId,
+      type: ["VerifiableCredential", "ProvenanceCredential"],
+      issuer: issuerDid,
+      issuanceDate: new Date().toISOString(),
+      credentialSubject: {
+        id: `hedera:testnet:topic:${songTopicId}`,
+        type: "CreativeWork",
+        title: songTitle || "Untitled",
+        provenanceChain: {
+          network: "testnet",
+          topicId: songTopicId,
+          hashscanUrl: `https://hashscan.io/testnet/topic/${songTopicId}`,
+          contributionCount: contributionCount || 0,
+        },
+        artifacts: artifacts || [],
+        masterHash: masterHash || null,
+      },
+    };
+
+    // Sign the VC with ECDSA operator key
+    const vcPayload = JSON.stringify(vc);
+    const vcHash = crypto.createHash("sha256").update(vcPayload).digest();
+    const signatureBytes = privateKey.sign(vcHash);
+    const signatureHex = Buffer.from(signatureBytes).toString("hex");
+
+    // Add proof to the VC
+    vc.proof = {
+      type: "EcdsaSecp256k1Signature2019",
+      created: new Date().toISOString(),
+      verificationMethod: `${issuerDid}#key-1`,
+      proofPurpose: "assertionMethod",
+      proofValue: signatureHex,
+    };
+
+    // Submit VC to the song's topic (with chunking support)
+    await submitToTopic(songTopicId, { type: "VerifiableCredential", credential: vc });
+
+    // Also submit to the artist's topic if provided
+    if (issuerTopicId) {
+      await submitToTopic(issuerTopicId, { type: "VerifiableCredential", credential: vc });
+    }
+
+    console.log(`✅ Issued VC ${vcId} for "${songTitle}"`);
+    res.json(vc);
+  } catch (err) {
+    console.error("❌ Issue credential error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

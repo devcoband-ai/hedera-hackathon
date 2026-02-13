@@ -66,6 +66,29 @@ A band could have five members, two AI tools, and a producer — and the provena
 
 ---
 
+### 4. Verifiable Credentials: Portable, Trustless Proof of Authorship
+
+**The gap:** Even with an immutable provenance chain, the certificate is still a file you email to a distributor. They have to trust that the file came from who it says it came from. There's no standard, no interoperability, no cryptographic proof of who issued it.
+
+**Our solution:** The provenance certificate becomes a W3C Verifiable Credential (VC), issued by the artist's Hedera Decentralized Identifier (DID).
+
+- **Artist DID** — Jon Bon Buckle gets a Hedera DID (`did:hedera:testnet:...`). His artist registration topic becomes his DID document. His creative DNA, his lineage, his manifesto — all anchored to a decentralized identity.
+- **Provenance VC** — When a work is complete, the artist issues a Verifiable Credential that says: "I, Jon Bon Buckle (DID), created this work through this process (Hedera topic), with these artifacts (hashed), using these AI tools."
+- **Cryptographic signature** — The VC is signed with the artist's DID private key. Anyone can verify: this credential was issued by this identity, which has this on-chain history.
+- **Portable standard** — W3C VCs are understood by any compliant verifier. Not our proprietary format. Not a PDF. A credential that travels with the work.
+
+**Why it matters:** A distributor doesn't have to trust our platform. They verify the VC independently:
+1. Check the DID → resolves to a Hedera DID document
+2. Check the signature → cryptographically valid
+3. Check the claims → link to Hedera consensus topic, verify messages exist
+4. Check the artifacts → SHA-256 hashes match the files
+
+Trust is computed, not assumed.
+
+**Why Hedera:** Hedera has native DID and Verifiable Credentials SDKs built on the Consensus Service. We're not bolting on identity — we're using the infrastructure Hedera already provides for exactly this purpose. DIDs resolve through HCS topics. VCs anchor to HCS messages. It's the same service we're already using, extended to identity.
+
+---
+
 ## The Innovation Stack
 
 | Layer | Problem | Solution | Hedera Service |
@@ -73,6 +96,7 @@ A band could have five members, two AI tools, and a producer — and the provena
 | **Provenance** | Can't prove human involvement in AI-assisted creation | Real-time logging of every creative decision | Consensus Service (topics + messages) |
 | **Multimodal** | Musicians create across many modes, none have provenance | Unified provenance DAG spanning all creative outputs | Linked topics (parent/child) |
 | **Collaborative** | Multi-party creative credit is unverifiable | On-chain contribution assertions with consensus agreement | Multi-party message submission + signatures |
+| **Verifiable Identity** | Certificates are untrusted files with no standard | W3C Verifiable Credentials issued by artist DIDs | DID SDK + Consensus Service |
 
 ## The Tagline
 

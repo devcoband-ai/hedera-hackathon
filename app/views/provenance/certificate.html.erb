@@ -138,6 +138,53 @@
       </div>
     <% end %>
 
+    <% if @package[:verifiable_credential].present? %>
+      <div class="section" style="border: 2px solid var(--purple);">
+        <h2>
+          🛡️ Verifiable Credential
+          <span class="badge badge-purple">W3C VC</span>
+          <span class="badge badge-green">Signed</span>
+        </h2>
+
+        <% vc = @package[:verifiable_credential] %>
+
+        <div class="meta-grid" style="margin-bottom: 16px;">
+          <div class="meta-item">
+            <div class="label">Issuer DID</div>
+            <div class="value" style="font-family: monospace; font-size: 0.8em; word-break: break-all;"><%= vc["issuer"] || vc[:issuer] %></div>
+          </div>
+          <div class="meta-item">
+            <div class="label">Credential ID</div>
+            <div class="value" style="font-family: monospace; font-size: 0.85em;"><%= vc["id"] || vc[:id] %></div>
+          </div>
+          <div class="meta-item">
+            <div class="label">Type</div>
+            <div class="value"><%= Array(vc["type"] || vc[:type]).join(", ") %></div>
+          </div>
+          <div class="meta-item">
+            <div class="label">Issued</div>
+            <div class="value"><%= vc["issuanceDate"] || vc[:issuanceDate] %></div>
+          </div>
+        </div>
+
+        <details style="margin-top: 12px;">
+          <summary style="cursor: pointer; color: var(--accent); font-weight: 600;">📄 View Full VC JSON</summary>
+          <pre style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.8em; margin-top: 8px; max-height: 400px; overflow-y: auto;"><%= JSON.pretty_generate(vc) %></pre>
+        </details>
+
+        <div style="margin-top: 16px; padding: 12px; background: rgba(188,140,255,0.08); border-radius: 6px; border: 1px solid rgba(188,140,255,0.2);">
+          <strong style="color: var(--purple);">🔐 VC Verification Steps:</strong>
+          <ol style="margin-top: 8px; padding-left: 20px; color: var(--muted); font-size: 0.9em;">
+            <li>Extract the VC JSON (without the <code>proof</code> field)</li>
+            <li>Compute its SHA-256 hash</li>
+            <li>Verify the ECDSA signature in <code>proof.proofValue</code> using the issuer's public key</li>
+            <li>Resolve the issuer DID on Hedera to confirm the public key matches</li>
+            <li>Check the credential subject references the correct song topic on <a href="https://hashscan.io/testnet/topic/<%= @manifest[:hedera][:topic_id] %>" target="_blank" style="color: var(--accent);">HashScan</a></li>
+          </ol>
+        </div>
+      </div>
+    <% end %>
+
     <div class="verify-box">
       <h3>🔍 How to Verify</h3>
       <p>This certificate is cryptographically verifiable. The master hash above is the SHA-256 digest of the complete manifest (all metadata, artifact hashes, and provenance chain).</p>

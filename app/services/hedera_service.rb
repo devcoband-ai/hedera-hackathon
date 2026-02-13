@@ -22,6 +22,28 @@ class HederaService
     JSON.parse(res.body)
   end
 
+  def self.register_artist(name, influences = [])
+    uri = URI("#{BASE_URL}/artists")
+    req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+    req.body = { name: name, influences: influences }.to_json
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+    JSON.parse(res.body)
+  end
+
+  def self.issue_credential(params)
+    uri = URI("#{BASE_URL}/credentials")
+    req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+    req.body = params.to_json
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+    JSON.parse(res.body)
+  end
+
+  def self.resolve_did(topic_id)
+    uri = URI("#{BASE_URL}/artists/#{topic_id}/did")
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
+    JSON.parse(res.body)
+  end
+
   def self.get_messages(topic_id)
     uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
     res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }

@@ -1,8 +1,10 @@
 require "digest"
 
 class ProvenancePackageService
-  def initialize(song)
+  def initialize(song, artist_did: nil, artist_topic_id: nil)
     @song = song
+    @artist_did = artist_did
+    @artist_topic_id = artist_topic_id
   end
 
   def generate
@@ -87,6 +89,24 @@ class ProvenancePackageService
         })
       rescue => e
         Rails.logger.warn "Hedera stamp failed: #{e.message}"
+      end
+
+      # Issue a Verifiable Credential if artist DID info is available
+      if @artist_did.present? && @artist_topic_id.present?
+        begin
+          vc = HederaService.issue_credential(
+            issuerDid: @artist_did,
+            issuerTopicId: @artist_topic_id,
+            songTitle: @song.title,
+            songTopicId: @song.hedera_topic_id,
+            masterHash: master_hash,
+            artifacts: artifacts.map { |a| { type: "audio", name: a[:name], sha256: a[:sha256] } },
+            contributionCount: chain.length
+          )
+          package[:verifiable_credential] = vc
+        rescue => e
+          Rails.logger.warn "VC issuance failed: #{e.message}"
+        end
       end
     end
 

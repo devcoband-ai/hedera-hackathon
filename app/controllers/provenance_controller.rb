@@ -42,7 +42,14 @@ class ProvenanceController < ApplicationController
   end
 
   def certificate
-    service = ProvenancePackageService.new(@song)
+    # Pass artist DID info if provided via params (or stored in session/config)
+    artist_did = params[:artist_did]
+    artist_topic_id = params[:artist_topic_id]
+
+    service = ProvenancePackageService.new(@song,
+      artist_did: artist_did,
+      artist_topic_id: artist_topic_id
+    )
     @package = service.generate
     @master_hash = @package[:master_hash_sha256]
     @manifest = @package[:manifest]
