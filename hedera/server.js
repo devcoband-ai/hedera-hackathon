@@ -15,6 +15,9 @@ import {
   PrivateKey,
 } from "@hashgraph/sdk";
 
+process.on('uncaughtException', (err) => { console.error('⚠️ Uncaught:', err.message); });
+process.on('unhandledRejection', (err) => { console.error('⚠️ Unhandled rejection:', err.message || err); });
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SENTINEL_PATH = path.join(__dirname, ".sentinel.json");
 
@@ -218,6 +221,7 @@ async function submitToTopic(topicId, messageObj) {
           JSON.stringify({ _chunk: true, index: i, total: totalChunks, data: chunk })
         )
         .execute(client);
+      if (i < totalChunks - 1) await new Promise(r => setTimeout(r, 500));
     }
   }
 }
