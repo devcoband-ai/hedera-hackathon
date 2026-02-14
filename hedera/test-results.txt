@@ -1,0 +1,144 @@
+
+╔════════════════════════════════════════════════╗
+║  🔬 PROVENANCE STUDIO — TRUST SCENARIO TESTS  ║
+║  Network: Hedera Testnet                       ║
+║  2026-02-14T00:32:55.872Z                        ║
+╚════════════════════════════════════════════════╝
+
+  🏥 Service: ok | Network: testnet | Operator: 0.0.7928359
+  🛡️  Sentinel: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+
+══════════════════════════════════════════════════
+  SCENARIO 1: Solo Artist Full Lifecycle
+══════════════════════════════════════════════════
+
+  Step 1: Register artist "Luna Vega"... ✅ DID: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 2: Create song topic "Midnight Algorithm"... ✅ Topic: 0.0.7930243
+  Step 3: Log contribution 1/4: prompt... ✅ recorded on-chain
+  Step 3: Log contribution 2/4: ai_generation... ✅ recorded on-chain
+  Step 3: Log contribution 3/4: artist_curation... ✅ recorded on-chain
+  Step 3: Log contribution 4/4: master_approval... ✅ recorded on-chain
+  Step 4: Issue Verifiable Credential (solo, 100% ownership)... ✅ VC ID: urn:uuid:0bdeb0d5-4fce-4dfc-aca9-01649a6d497d
+  Step 5: Verify credential... ✅ All checks passed
+    ✅ structure: VC has required fields
+    ✅ creator_shares: Shares sum to 100
+    ✅ signature_issuer: issuer signature (did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7930239#key-1) valid
+    ✅ signature_sentinel: sentinel signature (did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7929544#did-root-key) valid
+    ✅ sentinel_attestation: Sentinel co-signature present
+  Step 6: Read full provenance chain from mirror node... ✅ 7 messages on-chain
+    📝 [1] Contribution: Artist prompt: 'ethereal synth-pop with glitch textures'
+    📝 [2] Contribution: AI generated 4 stems: drums, bass, synth pad, melody
+    📝 [3] Contribution: Artist selected stems 1,3,4; remixed melody; added vocal cho
+    📝 [4] Contribution: Final master approved, hash generated
+    📝 [5] unknown: 
+    📝 [6] unknown: 
+    📝 [7] unknown: 
+
+  📋 RESULT: ✅ PASS — Complete provenance chain with solo ownership VC
+══════════════════════════════════════════════════
+
+══════════════════════════════════════════════════
+  SCENARIO 2: Collaborative Split (Happy Path)
+══════════════════════════════════════════════════
+
+  Step 1: Register artist "Marcus Cole" (producer)... ✅ DID: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 2: Register artist "Aria Chen" (vocalist)... ✅ DID: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 3: Create song topic "Neon Heartbeat"... ✅ Topic: 0.0.7930253
+  Step 4: Log contributions from both artists... ✅ 4 contributions from 2 artists recorded
+  Step 5: Issue collaborative VC (Marcus 60%, Aria 40%)... ✅ VC ID: urn:uuid:bac826dc-c388-45a8-8a1c-b0a7d93751c0
+  Step 6: Verify collaborative credential... ✅ All checks passed
+  Step 7: Show creators array and ownership splits... ✅ Ownership breakdown:
+    🎵 producer: 60% — did:hedera:testnet:02c21d708a8fbd1d466892bbe2...
+    🎵 vocalist: 40% — did:hedera:testnet:02c21d708a8fbd1d466892bbe2...
+
+  📋 RESULT: ✅ PASS — Multi-creator VC with validated ownership splits
+══════════════════════════════════════════════════
+
+══════════════════════════════════════════════════
+  SCENARIO 3: Invalid Split Rejection
+══════════════════════════════════════════════════
+
+  Step 1: Issue VC with shares summing to 110%... ✅ Rejected: "Creator shares must sum to 100, got 110"
+  Step 2: Issue VC with shares summing to 90%... ✅ Rejected: "Creator shares must sum to 100, got 90"
+  Step 3: Issue VC with shares summing to 0%... ✅ Rejected: "Creator shares must sum to 100, got 0"
+  Step 4: Demonstrate sentinel won't co-sign invalid economics... ✅ All invalid splits rejected before signing
+
+  📋 RESULT: ✅ PASS — Sentinel rejects all non-100% ownership splits
+══════════════════════════════════════════════════
+
+══════════════════════════════════════════════════
+  SCENARIO 4: Trust Revocation
+══════════════════════════════════════════════════
+
+  Step 1: Register artist "Ghost Producer"... ✅ DID: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 2: Create song and log contributions... ✅ Topic: 0.0.7930257
+✅ 2 contributions logged
+  Step 3: Issue VC — should pass verification... ✅ VC valid ✅ — ID: urn:uuid:a68aff5a-396d-4640-a0b1-ac41509da9fb
+  Step 4: Submit RevocationNotice to song topic... ✅ Revocation notice submitted on-chain
+  Step 5: Read messages — show credential AND revocation in audit trail... ✅ 6 messages in immutable audit trail:
+    📝 [1] Contribution: Full track production
+    📝 [2] Contribution: Final master
+    📝 [3] data: 
+    📝 [4] data: 
+    📝 [5] data: 
+    🚫 [6] RevocationNotice: Ownership dispute filed — ghost production claim
+
+  📋 RESULT: ✅ PASS — Immutable audit trail with credential + revocation on-chain
+══════════════════════════════════════════════════
+
+══════════════════════════════════════════════════
+  SCENARIO 5: Sentinel Authority
+══════════════════════════════════════════════════
+
+  Step 1: Issue VC with dual proof (artist + sentinel)... ✅ VC has 2 proofs:
+    🔑 assertionMethod: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+    🔑 authentication: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 2: Tamper with VC (change title) and re-verify... ✅ Tampered VC correctly rejected — signatures invalid
+    ✅ structure: VC has required fields
+    ✅ creator_shares: Shares sum to 100
+    ❌ signature_issuer: issuer signature (did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7930258#key-1) invalid
+    ❌ signature_sentinel: sentinel signature (did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7929544#did-root-key) invalid
+    ✅ sentinel_attestation: Sentinel co-signature present
+  Step 3: Remove sentinel proof and re-verify... ✅ VC without sentinel correctly rejected
+    ✅ structure: VC has required fields
+    ✅ creator_shares: Shares sum to 100
+    ✅ signature_issuer: issuer signature (did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7930258#key-1) valid
+    ❌ sentinel_attestation: No sentinel co-signature found
+
+  📋 RESULT: ✅ PASS — Dual-proof system prevents tampering and unauthorized credentials
+══════════════════════════════════════════════════
+
+══════════════════════════════════════════════════
+  SCENARIO 6: Artist Identity Provenance
+══════════════════════════════════════════════════
+
+  Step 1: Register artist "DJ Quantum" with rich profile... ✅ DID: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+✅ Topic: 0.0.7930260
+  Step 2: Submit creative DNA messages to artist topic... ✅ 3 creative DNA messages recorded on-chain
+  Step 3: Resolve DID from mirror node... ✅ Resolved: did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859...
+  Step 4: Read full artist topic — identity provenance... ✅ 5 identity records on-chain:
+    🧬 [1] DIDDocument (chunked)
+    🧬 [2] DIDDocument (chunked)
+    🧬 [3] DIDDocument (chunked)
+    🧬 [4] DIDDocument (chunked)
+    🧬 [5] DIDDocument (chunked)
+
+    💡 The artist's identity itself has provenance — not just their songs.
+    💡 Creative DNA, manifesto, and collaboration history are all on-chain.
+
+  📋 RESULT: ✅ PASS — Artist identity with creative DNA anchored to Hedera
+══════════════════════════════════════════════════
+
+╔════════════════════════════════════════════════╗
+║          TEST RESULTS SUMMARY                  ║
+╠════════════════════════════════════════════════╣
+║  ✅ Scenario 1: PASS   Solo Artist Full Lifecycle     ║
+║  ✅ Scenario 2: PASS   Collaborative Split            ║
+║  ✅ Scenario 3: PASS   Invalid Split Rejection        ║
+║  ✅ Scenario 4: PASS   Trust Revocation               ║
+║  ✅ Scenario 5: PASS   Sentinel Authority             ║
+║  ✅ Scenario 6: PASS   Artist Identity Provenance     ║
+╠════════════════════════════════════════════════╣
+║  6/6 scenarios passed                             ║
+╚════════════════════════════════════════════════╝
+
