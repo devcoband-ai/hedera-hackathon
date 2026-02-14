@@ -1,0 +1,66 @@
+═══════════════════════════════════════════════════════════════
+  🧪 BADGE ENDPOINT TEST RESULTS
+  2026-02-14T17:48:21Z
+═══════════════════════════════════════════════════════════════
+
+Endpoint: POST /badges
+Status: 200 OK ✅
+
+Request:
+{
+  "artistDid": "did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7930477",
+  "artistTopicId": "0.0.7930477",
+  "songTopicId": "0.0.7930486",
+  "badgeName": "Test Badge",
+  "badgeDescription": "Testing badge issuance on Hedera testnet",
+  "badgeCriteria": "Successfully issued a test badge"
+}
+
+Response (truncated):
+{
+  "badge": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+    ],
+    "id": "urn:uuid:a53dc639-f42c-400e-b39c-28f9fff5f9ca",
+    "type": ["VerifiableCredential", "AchievementCredential"],
+    "issuer": {
+      "id": "did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7929544",
+      "type": "Profile",
+      "name": "Provenance Studio"
+    },
+    "validFrom": "2026-02-14T17:48:21.447Z",
+    "credentialSubject": {
+      "type": "AchievementSubject",
+      "id": "did:hedera:testnet:02c21d708a8fbd1d466892bbe2f9859c8ed5105ac281c8bd440de19f49cf901eef_0.0.7930477",
+      "achievement": {
+        "type": "Achievement",
+        "name": "Test Badge",
+        "description": "Testing badge issuance on Hedera testnet",
+        "criteria": {
+          "narrative": "Successfully issued a test badge"
+        }
+      }
+    },
+    "evidence": [{
+      "id": "https://hashscan.io/testnet/topic/0.0.7930486",
+      "type": "Evidence",
+      "name": "Hedera Provenance Chain"
+    }],
+    "proof": [
+      { "type": "EcdsaSecp256k1Signature2019", "proofPurpose": "assertionMethod", ... },
+      { "type": "EcdsaSecp256k1Signature2019", "proofPurpose": "authentication", ... }
+    ]
+  },
+  "songTopicId": "0.0.7930486",
+  "hashscanUrl": "https://hashscan.io/testnet/topic/0.0.7930486"
+}
+
+Badge submitted to:
+- Song topic: 0.0.7930486 (Screwed)
+- Artist topic: 0.0.7930477 (Jeff)
+
+Verification: https://hashscan.io/testnet/topic/0.0.7930486
+
+Test: PASSED ✅

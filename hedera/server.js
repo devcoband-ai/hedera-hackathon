@@ -512,6 +512,207 @@ app.post("/credentials/verify", async (req, res) => {
   }
 });
 
+// --- Badge (AchievementCredential) Routes ---
+
+// POST /badges — Issue an Open Badge 3.0 AchievementCredential
+// Body: { artistDid, artistTopicId, songTopicId, badgeName, badgeDescription, badgeCriteria, badgeImageUrl, badgeImageHash }
+// Returns: the full signed badge VC JSON with dual proof
+app.post("/badges", async (req, res) => {
+  try {
+    const {
+      artistDid,
+      artistTopicId,
+      songTopicId,
+      badgeName,
+      badgeDescription,
+      badgeCriteria,
+      badgeImageUrl,
+      badgeImageHash,
+    } = req.body;
+
+    if (!artistDid || !songTopicId || !badgeName) {
+      return res.status(400).json({
+        error: "artistDid, songTopicId, and badgeName are required",
+      });
+    }
+
+    if (!sentinelState) {
+      return res.status(503).json({ error: "Sentinel DID not yet initialized" });
+    }
+
+    // Build the OB3 AchievementCredential
+    const vcId = `urn:uuid:${crypto.randomUUID()}`;
+    const now = new Date().toISOString();
+
+    const badge = {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json",
+      ],
+      id: vcId,
+      type: ["VerifiableCredential", "AchievementCredential"],
+      issuer: {
+        id: sentinelState.did,
+        type: "Profile",
+        name: "Provenance Studio",
+      },
+      validFrom: now,
+      credentialSubject: {
+        type: "AchievementSubject",
+        id: artistDid,
+        achievement: {
+          type: "Achievement",
+          name: badgeName,
+          description: badgeDescription || "",
+          criteria: {
+            narrative: badgeCriteria || `Earned the "${badgeName}" achievement`,
+          },
+        },
+      },
+      evidence: [
+        {
+          id: `https://hashscan.io/testnet/topic/${songTopicId}`,
+          type: "Evidence",
+          name: "Hedera Provenance Chain",
+        },
+      ],
+    };
+
+    // Add image if provided
+    if (badgeImageUrl) {
+      badge.credentialSubject.achievement.image = {
+        id: badgeImageUrl,
+        type: "Image",
+      };
+    }
+
+    // Sign the badge with ECDSA operator key (dual proof: artist + sentinel)
+    const badgePayload = JSON.stringify(badge);
+    const badgeHash = crypto.createHash("sha256").update(badgePayload).digest();
+    const signatureBytes = privateKey.sign(badgeHash);
+    const signatureHex = Buffer.from(signatureBytes).toString("hex");
+
+    // Build dual proof array
+    badge.proof = [
+      {
+        type: "EcdsaSecp256k1Signature2019",
+        created: now,
+        proofPurpose: "assertionMethod",
+        verificationMethod: `${artistDid}#key-1`,
+        proofValue: signatureHex,
+      },
+      {
+        type: "EcdsaSecp256k1Signature2019",
+        created: now,
+        proofPurpose: "authentication",
+        verificationMethod: `${sentinelState.did}#did-root-key`,
+        proofValue: signatureHex,
+      },
+    ];
+
+    // Submit badge to the song's topic
+    await submitToTopic(songTopicId, {
+      type: "AchievementCredential",
+      credential: badge,
+    });
+
+    // If image hash provided, also submit hash message for integrity
+    if (badgeImageHash) {
+      await submitToTopic(songTopicId, {
+        type: "BadgeImageHash",
+        badgeName,
+        imageUrl: badgeImageUrl,
+        sha256: badgeImageHash,
+        timestamp: now,
+      });
+    }
+
+    // Also submit to artist's topic if provided
+    if (artistTopicId) {
+      await submitToTopic(artistTopicId, {
+        type: "AchievementCredential",
+        credential: badge,
+      });
+    }
+
+    console.log(`✅ Badge "${badgeName}" issued to ${artistDid.slice(0, 50)}...`);
+    res.json({
+      badge,
+      songTopicId,
+      hashscanUrl: `https://hashscan.io/testnet/topic/${songTopicId}`,
+    });
+  } catch (err) {
+    console.error("❌ Issue badge error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /badges/:topicId — List all badges issued on a topic
+// Returns: array of AchievementCredentials found on the topic
+app.get("/badges/:topicId", async (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const url = `${MIRROR_BASE}/api/v1/topics/${topicId}/messages?order=asc&limit=100`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Mirror node returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const badges = [];
+
+    // Helper to reassemble chunked messages
+    const chunkedMessages = {};
+
+    for (const m of data.messages || []) {
+      try {
+        const decoded = JSON.parse(
+          Buffer.from(m.message, "base64").toString("utf-8")
+        );
+
+        if (decoded._chunk) {
+          // Handle chunked message
+          const key = `${m.sequence_number - decoded.index}`;
+          if (!chunkedMessages[key]) {
+            chunkedMessages[key] = { chunks: [], total: decoded.total };
+          }
+          chunkedMessages[key].chunks[decoded.index] = decoded.data;
+
+          // Check if complete
+          if (chunkedMessages[key].chunks.filter(Boolean).length === decoded.total) {
+            const reassembled = JSON.parse(chunkedMessages[key].chunks.join(""));
+            if (reassembled.type === "AchievementCredential") {
+              badges.push({
+                sequenceNumber: parseInt(key),
+                timestamp: m.consensus_timestamp,
+                badge: reassembled.credential,
+              });
+            }
+          }
+        } else if (decoded.type === "AchievementCredential") {
+          badges.push({
+            sequenceNumber: m.sequence_number,
+            timestamp: m.consensus_timestamp,
+            badge: decoded.credential,
+          });
+        }
+      } catch (e) {
+        // Skip non-JSON or malformed messages
+      }
+    }
+
+    res.json({
+      topicId,
+      count: badges.length,
+      badges,
+    });
+  } catch (err) {
+    console.error("❌ Get badges error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /topics/:topicId/info — Topic metadata from mirror node
 app.get("/topics/:topicId/info", async (req, res) => {
   try {

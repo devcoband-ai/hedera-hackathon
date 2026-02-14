@@ -1,0 +1,115 @@
+
+═══════════════════════════════════════════════════════════════
+  🏆 ALBUM BADGE REPLAY RESULTS
+  2026-02-14T17:49:29.209Z
+═══════════════════════════════════════════════════════════════
+
+Badges Issued: 12 / 12
+Estimated Cost: ~$0.0240
+Time Elapsed: 47.2s
+
+Album Topic: 0.0.7930484
+https://hashscan.io/testnet/topic/0.0.7930484
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  INDIVIDUAL BADGE RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Track 1: "Screwed"
+   Badge: "Is This Song About Me?"
+   Recipient: jon
+   VC ID: urn:uuid:148834a1-6bab-4eda-88d9-234cf760c53b
+   Song Topic: 0.0.7930486
+   Artist Topic: 0.0.7930480
+   Status: ✅ Success
+
+Track 2: "Sounds Like Heaven"
+   Badge: "Cover Art Wrote a Song"
+   Recipient: jeff
+   VC ID: urn:uuid:e041d432-f2ba-4d59-bab6-5fc230a49032
+   Song Topic: 0.0.7930491
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 3: "Ciudad"
+   Badge: "The Simulation That Shipped"
+   Recipient: sam
+   VC ID: urn:uuid:ea31903b-2e6c-49f2-bbae-1929b56cb6b8
+   Song Topic: 0.0.7930493
+   Artist Topic: 0.0.7930479
+   Status: ✅ Success
+
+Track 4: "Unannounced"
+   Badge: "The Drunk Poet"
+   Recipient: jeff
+   VC ID: urn:uuid:7ce6b32d-72fe-4ed8-97cd-54e9d99042f9
+   Song Topic: 0.0.7930496
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 5: "Album Cover Painting"
+   Badge: "Same Words, Different Movie"
+   Recipient: jeff
+   VC ID: urn:uuid:a355e27e-8ee5-438f-a1b2-e6262c719660
+   Song Topic: 0.0.7930498
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 6: "Already True"
+   Badge: "No Robots Were Harmed"
+   Recipient: jeff
+   VC ID: urn:uuid:fb1069de-e090-464a-b808-f0032984d149
+   Song Topic: 0.0.7930499
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 7: "Pop Song Summer"
+   Badge: "The Child That Became the Parent"
+   Recipient: jeff
+   VC ID: urn:uuid:83ef7684-205c-496c-b20d-a13270839e54
+   Song Topic: 0.0.7930502
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 8: "Intimate Restraint"
+   Badge: "Genre Is Authorship"
+   Recipient: jeff
+   VC ID: urn:uuid:c74668ab-ad4e-44a7-b8bb-574740e6facd
+   Song Topic: 0.0.7930505
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 9: "Let's Stay This Way"
+   Badge: "The Cathedral"
+   Recipient: jeff
+   VC ID: urn:uuid:0dd0117f-848f-4b0f-a925-9f82bef58b90
+   Song Topic: 0.0.7930509
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 10: "Flowin"
+   Badge: "The Process Watching Itself"
+   Recipient: jeff
+   VC ID: urn:uuid:8f20e4fb-b92c-4352-a3a4-57f6bed5b912
+   Song Topic: 0.0.7930512
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 11: "Christmas Time"
+   Badge: "Wrong Season, Right Feeling"
+   Recipient: jeff
+   VC ID: urn:uuid:e6449aa4-3d8e-4842-8f3a-6b5239048333
+   Song Topic: 0.0.7930516
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+Track 12: "Sounds Like Heaven Revisited"
+   Badge: "The Ouroboros Badge"
+   Recipient: jeff
+   VC ID: urn:uuid:01c56479-1ea8-4df6-b2a1-e6771bb92dee
+   Song Topic: 0.0.7930517
+   Artist Topic: 0.0.7930477
+   Status: ✅ Success
+
+
+═══════════════════════════════════════════════════════════════
