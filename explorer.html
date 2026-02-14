@@ -307,7 +307,8 @@ function getType(msg) {
   if (t === 'verifiablecredential' || msg.credential) return 'VerifiableCredential';
   if (t === 'diddocument' || msg.verificationMethod) return 'DIDDocument';
   if (t === 'revocationnotice') return 'RevocationNotice';
-  if (t === 'album_info' || t === 'track_listing') return 'AlbumInfo';
+  if (t === 'track_registration') return 'TrackRegistration';
+  if (t === 'album_info' || t === 'track_listing' || t === 'album_registration') return 'AlbumInfo';
   if (msg.type) return msg.type;
   return 'Unknown';
 }
@@ -318,6 +319,7 @@ function typeBadgeClass(t) {
   if (t === 'DIDDocument') return 'DIDDocument';
   if (t === 'RevocationNotice') return 'RevocationNotice';
   if (t === 'AlbumInfo') return 'Contribution';
+  if (t === 'TrackRegistration') return 'Contribution';
   return 'other';
 }
 
@@ -335,6 +337,13 @@ function renderCard(item) {
       ${field('Detail', m.detail || m.description || '')}
       ${field('Track', m.trackTitle ? `#${m.trackNumber || ''} ${m.trackTitle}` : '')}
       ${field('Evidence', m.evidence || '')}
+    `;
+  } else if (type === 'TrackRegistration') {
+    const m = item.msg;
+    body = `
+      <div style="font-size:1rem;font-weight:600">🎵 Track ${m.trackNumber || '?'}: ${escHtml(m.title || 'Untitled')}</div>
+      ${m.trackTopicId ? `<div class="field"><span class="label">Topic:</span> <a href="#" onclick="go('${m.trackTopicId}');return false" style="color:var(--blue)">${m.trackTopicId}</a></div>` : ''}
+      ${field('Timestamp', m.timestamp || '')}
     `;
   } else if (type === 'AlbumInfo') {
     const m = item.msg;
