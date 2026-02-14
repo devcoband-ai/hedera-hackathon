@@ -292,14 +292,43 @@ This isn't just about music NFTs. Any creative work with AI involvement — cove
 
 The NFT becomes proof of *how* something was made, not just *that* it exists.
 
+## The Sentinel Network & Licensing Marketplace
+
+We started with one sentinel. But the architecture supports many.
+
+Think about what happens after creation. A film producer wants to license the song. A distributor picks it up. A label signs the artist. Each is a **different trust domain** with a **different sentinel** watching:
+
+- **Creation Sentinel** (Provenance Studio) — "I watched the artist make this"
+- **Marketplace Sentinel** — "I processed the licensing transaction"
+- **Distribution Sentinel** — "This work meets our content requirements"
+- **Label Sentinel** — "This artist is on our roster"
+
+A song accumulates sentinel attestations as it moves through the world. More sentinels = more trust.
+
+### Licensing Through Staking
+
+Here's where it gets interesting. Today, licensing a song requires discovery, negotiation, contracts, payment processing, rights clearance. Multiple parties, multiple documents, weeks of back-and-forth.
+
+In a sentinel-networked marketplace, it's one transaction:
+
+1. Licensee finds the song, reads the VC — creators, splits, sentinel-verified
+2. Licensee **stakes HBAR** on the song's topic — the stake IS the license fee
+3. Hedera auto-distributes per the creators array (50% to Jeff, 25% to Sam, 25% to Jon)
+4. Marketplace sentinel takes 2-3% and co-signs a **License VC**
+5. License recorded on-chain — done
+
+Three things collapse into one: **discovery, agreement, and payment.** No lawyers. No contracts. The VC says who gets paid. The stake is the deal. The sentinel witnesses it.
+
+And here's the kicker: **provenance makes licenses more valuable.** A song with 77 documented decisions and a sentinel co-signature gives the licensee legal cover. If anyone challenges the use, the provenance chain IS the defense. More provenance → safer license → higher stakes → more revenue. The economics reward documenting your creative process.
+
 ## What's Next
 
 1. **Hackathon submission** — Hedera Hello Future Apex, AI & Agents track, $250K prize pool, deadline March 23
 2. **NFT minting** — Integrate Hedera Token Service to mint provenance-backed NFTs from verified credentials
-3. **Demo video** — Jon walks judges through the full flow: create artist → produce song → collaborate → stamp → verify → mint
-4. **Tufte-styled presentation** — Clean, data-rich visual design for the whitepaper and demo materials
-5. **Production deployment** — Move from testnet to mainnet
-6. **Distributor integration** — Export provenance certificates that Spotify, Apple Music, etc. can verify
+3. **Sentinel network** — Multiple sentinel types for licensing, distribution, and rights clearance
+4. **Staking marketplace** — License music through HBAR staking with auto-distribution
+5. **Demo video** — Jon walks judges through the full flow
+6. **Production deployment** — Move from testnet to mainnet
 
 ## The Tagline
 

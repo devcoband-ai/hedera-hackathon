@@ -156,17 +156,63 @@ We chose Hedera Consensus Service deliberately, and the reasons matter.
 
 ---
 
-## 6. Implications
+## 6. The Sentinel Network
+
+We started with one sentinel. The platform — Provenance Studio — watches you make the song and co-signs the credential. But one sentinel is a beginning, not the destination.
+
+Consider what happens when a song moves beyond creation:
+
+A film producer discovers the track and wants to license it. A distributor picks it up for streaming. A rights organization clears it for international use. A label signs the artist. Each of these is a **different trust domain** with a **different authority** watching a **different process**.
+
+The architecture already supports this. A credential can carry multiple signatures in its proof array. Each sentinel has its own DID. Each co-signs credentials in its domain:
+
+- **Creation Sentinel** (Provenance Studio) — "I watched the artist make this. The creative workflow was real."
+- **Marketplace Sentinel** — "I processed the licensing transaction. The stake was placed, the payment was distributed per the creators array."
+- **Distribution Sentinel** — "This work meets our content requirements. Provenance verified."
+- **Legal Sentinel** — "The ownership chain is clear. No competing claims found."
+- **Label Sentinel** — "This artist is on our roster. We vouch for their identity."
+
+A song accumulates sentinel attestations as it moves through the world. A credential with one sentinel co-signature is provenance. A credential with four is a reputation.
+
+### Licensing Through Staking
+
+The sentinel network enables a marketplace model that collapses licensing into a single transaction.
+
+Today, licensing a song requires: discovery of terms, negotiation, contract signing, payment processing, rights clearance. Each step involves different parties, different documents, different timelines.
+
+In a sentinel-networked marketplace:
+
+1. The licensee finds the song and reads its VC — creators, splits, sentinel attestation, all on-chain
+2. The licensee **stakes HBAR** on the song's topic — the stake IS the license fee
+3. Hedera Token Service auto-distributes: 50% to Jeff, 25% to Sam, 25% to Jon (per the creators array)
+4. The marketplace sentinel takes a 2-3% fee and co-signs a **License VC**
+5. The license grant is recorded on-chain — a new credential referencing the original provenance
+
+Three things collapse into one: **discovery, agreement, and payment.** The VC says who gets paid. The stake is the deal. The sentinel witnesses the transaction.
+
+The license credential itself becomes portable proof: "This entity paid X to use this work, verified by the marketplace sentinel, distributed per the original credential." Anyone downstream can verify the license the same way they verify the provenance — resolve the DIDs, check the signatures, confirm the chain.
+
+### Trust Compounds
+
+Here's the deeper insight: **provenance makes licenses more valuable, not less.**
+
+A film producer licensing a song with 77 documented creative decisions, a creation sentinel co-signature, and verified ownership splits isn't just getting music — they're getting legal cover. If anyone challenges the use, the provenance chain IS the defense. The more provenance, the safer the license. The safer the license, the higher the stakes people are willing to place.
+
+The economics reward doing the work of documenting your process. Thorough provenance → stronger sentinel attestation → higher trust score → more licensing demand → more revenue. The system incentivizes exactly the behavior we want: artists proving their creative authority.
+
+### Sentinel Economics
+
+If sentinels stake on every credential they co-sign, they have skin in the game. A sentinel that co-signs fraudulent provenance loses its stake. This makes trust *expensive to fake* and *profitable to maintain*. The sentinel's economic incentive is perfectly aligned with its trust function: be right, earn fees; be wrong, lose capital.
+
+This transforms the business model from subscription ("pay us monthly") to economic participation ("we earn when trust flows through us"). The more trusted the sentinel, the more transactions it attracts, the more fees it earns. Reputation becomes revenue.
+
+## 7. Implications
 
 We built this for music. But the architecture doesn't know that.
 
 The five-layer model — primitives, ontology, assertions, sentinels, state — is domain-agnostic. Swap "artist" for "author" and "song" for "manuscript" and you have a provenance system for AI-assisted writing. Swap for "designer" and "blueprint" and you have architectural provenance. Swap for "researcher" and "dataset" and you have scientific provenance.
 
-The sentinel principle applies everywhere collaborative work involves AI:
-
-- **Visual art.** Who directed the AI? Who curated the outputs? Who made the aesthetic decisions? The sentinel witnessed the workflow.
-- **Software development.** AI-assisted code generation is already ubiquitous. Who prompted it? Who reviewed it? Who's responsible for it? Log the contributions, sign the credential, let the sentinel attest.
-- **Academic research.** AI-generated literature reviews, data analysis, even experimental design. The question of "what did the human actually do?" needs a cryptographic answer, not a disclosure statement.
+The sentinel network scales the same way. A publishing sentinel co-signs manuscripts. An architecture sentinel co-signs building designs. A scientific sentinel co-signs datasets. Each domain gets its own trust authority, its own staking economics, its own marketplace.
 
 The deeper implication is philosophical. We're entering an era where the *process* of creation matters as much as the *product*. When anyone can generate a finished artifact with a prompt, the value shifts to creative direction, curation, and decision-making — the human judgment that shaped the output. Provenance infrastructure doesn't just record that shift. It makes it legible. It makes it provable. It makes it valuable.
 
