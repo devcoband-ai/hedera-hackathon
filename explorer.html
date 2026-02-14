@@ -308,6 +308,10 @@ function getType(msg) {
   if (t === 'diddocument' || msg.verificationMethod) return 'DIDDocument';
   if (t === 'revocationnotice') return 'RevocationNotice';
   if (t === 'track_registration') return 'TrackRegistration';
+  if (t === 'artist_registration') return 'ArtistRegistration';
+  if (t === 'artistic_lineage') return 'ArtisticLineage';
+  if (t === 'creative_manifesto') return 'CreativeManifesto';
+  if (t === 'cover_art_prompt' || t === 'ai_generation_receipt') return 'Contribution';
   if (t === 'album_info' || t === 'track_listing' || t === 'album_registration') return 'AlbumInfo';
   if (msg.type) return msg.type;
   return 'Unknown';
@@ -320,6 +324,9 @@ function typeBadgeClass(t) {
   if (t === 'RevocationNotice') return 'RevocationNotice';
   if (t === 'AlbumInfo') return 'Contribution';
   if (t === 'TrackRegistration') return 'Contribution';
+  if (t === 'ArtistRegistration') return 'DIDDocument';
+  if (t === 'ArtisticLineage') return 'DIDDocument';
+  if (t === 'CreativeManifesto') return 'DIDDocument';
   return 'other';
 }
 
@@ -338,6 +345,29 @@ function renderCard(item) {
       ${field('Track', m.trackTitle ? `#${m.trackNumber || ''} ${m.trackTitle}` : '')}
       ${field('Evidence', m.evidence || '')}
     `;
+  } else if (type === 'ArtistRegistration') {
+    const m = item.msg;
+    body = `
+      <div style="font-size:1rem;font-weight:600">🎤 ${escHtml(m.name || 'Unknown Artist')}</div>
+      ${field('Label', m.label || '')}
+      ${field('Registered', m.registered_at || '')}
+    `;
+  } else if (type === 'ArtisticLineage') {
+    const m = item.msg;
+    body = `<div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">🧬 Artistic Lineage</div>`;
+    if (m.influences && m.influences.length) {
+      body += m.influences.map(inf =>
+        `<div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:0.85rem"><strong>${escHtml(inf.name || '')}</strong> <span style="color:var(--muted)">(${escHtml(inf.domain || '')})</span><br><span style="color:var(--muted);font-size:0.8rem">${escHtml(inf.element || '')}</span></div>`
+      ).join('');
+    }
+  } else if (type === 'CreativeManifesto') {
+    const m = item.msg;
+    body = `<div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">📜 Creative Manifesto</div>`;
+    if (m.principles && m.principles.length) {
+      body += m.principles.map(p =>
+        `<div style="padding:3px 0;font-size:0.85rem;color:var(--text)">• ${escHtml(p)}</div>`
+      ).join('');
+    }
   } else if (type === 'TrackRegistration') {
     const m = item.msg;
     body = `
