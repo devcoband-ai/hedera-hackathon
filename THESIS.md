@@ -200,11 +200,76 @@ A film producer licensing a song with 77 documented creative decisions, a creati
 
 The economics reward doing the work of documenting your process. Thorough provenance → stronger sentinel attestation → higher trust score → more licensing demand → more revenue. The system incentivizes exactly the behavior we want: artists proving their creative authority.
 
-### Sentinel Economics
+### Sentinel Economics: Reputation as a Computed Asset
 
-If sentinels stake on every credential they co-sign, they have skin in the game. A sentinel that co-signs fraudulent provenance loses its stake. This makes trust *expensive to fake* and *profitable to maintain*. The sentinel's economic incentive is perfectly aligned with its trust function: be right, earn fees; be wrong, lose capital.
+Here's where the sentinel network becomes self-sustaining. If sentinels stake on every credential they co-sign, they have skin in the game. But staking alone is a static commitment. What makes it dynamic is **reputation** — a score computed from on-chain behavior that determines how much trust, and how much revenue, a sentinel attracts.
 
-This transforms the business model from subscription ("pay us monthly") to economic participation ("we earn when trust flows through us"). The more trusted the sentinel, the more transactions it attracts, the more fees it earns. Reputation becomes revenue.
+**The Reputation Function**
+
+A sentinel's reputation score is computed from its track record:
+
+- Credential goes unchallenged for 90 days → reputation +1
+- Credential independently verified by another sentinel → reputation +2
+- Credential disputed and the sentinel was right (challenge rejected) → reputation +5
+- Credential disputed and the sentinel was wrong (challenge upheld) → reputation -50, stake slashed
+
+The asymmetry is deliberate. It takes 50 good attestations to recover from one bad one. Trust is hard to build, easy to destroy, and impossible to fake — because it's computed from immutable on-chain history, not self-reported.
+
+**A Credit Rating for Trust**
+
+FICO scores rate financial trustworthiness. Sentinel reputation scores rate *attestation* trustworthiness. And like FICO, the score compounds:
+
+- A sentinel with 500 unchallenged attestations and a 99.8% accuracy rate is a premium service
+- A sentinel with 50 attestations and two disputes is a risk
+- A sentinel with zero track record is unproven — artists might choose it for lower fees, but licensees will discount its attestation
+
+The score is public. It's on-chain. It's computed, not claimed. Anyone can query the sentinel registry contract and see exactly how trustworthy a sentinel is based on what it's actually done.
+
+**The Flywheel**
+
+Higher reputation creates an economic flywheel:
+
+1. Good attestations → reputation grows
+2. Higher reputation → more artists choose this sentinel
+3. More artists → more credentials co-signed → more licensing flow
+4. More licensing flow → more fees (2-3% of each transaction)
+5. More fees → more stake to put at risk → stronger trust signal
+6. Stronger signal → more artists choose this sentinel
+7. Repeat
+
+Bad sentinels get pushed out economically. They can't attract artists because their score is low. They can't attract licensees because their attestation is weak. The market self-selects for trust without anyone appointing who's trustworthy.
+
+**Smart Contract Infrastructure**
+
+This economy runs on three contracts on Hedera Smart Contract Service:
+
+**1. Sentinel Registry Contract**
+- Registers sentinel DIDs with an initial stake (minimum threshold)
+- Tracks reputation scores on-chain
+- Exposes `isApproved(sentinelDID)` and `reputationScore(sentinelDID)` for other contracts to query
+- Handles stake slashing when disputes are upheld
+- Anyone can become a sentinel by staking and registering — permission is economic, not administrative
+
+**2. Licensing Contract**
+- Holds staked HBAR in escrow during licensing transactions
+- Reads the creators array from the VC to determine distribution splits
+- Checks the sentinel registry before accepting a co-signature
+- Auto-distributes on completion: creator shares + sentinel fee
+- Handles disputes: freezes escrow, routes to resolution, slashes the losing party
+
+**3. Verification Contract**
+- Moves our `/credentials/verify` logic on-chain — trustless verification
+- Checks: VC structure, creator shares sum to 100, signatures valid, sentinel registered and in good standing
+- Returns a verification result that other contracts can consume
+- No one has to trust our API — the contract IS the verifier
+
+These three contracts compose: the licensing contract checks the verification contract, which checks the registry contract. Trust flows through code, not through us.
+
+**The Sentinel Isn't Appointed — It Earns**
+
+This is the key insight, and it connects directly back to the architectural principle: sentinels don't derive authority from permission. They derive it from demonstrated reliability with economic consequences. The smart contracts enforce the rules. The reputation score reflects reality. The market rewards trust.
+
+The architecture computes authority from behavior. That's not just a technical design — it's a governance philosophy.
 
 ## 7. Implications
 
@@ -220,7 +285,7 @@ This is what "Provenance as a Service" means. Not a product. Not a platform. An 
 
 ---
 
-## 7. Conclusion
+## 8. Conclusion
 
 We started this project with a question: in a world where AI can generate music, what does it mean to be the artist?
 
