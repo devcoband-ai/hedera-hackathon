@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Let's Stay This Way — Devco</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #151515; --surface2: #1c1c1c; --border: #252525;
+    --accent: #e8720c; --purple: #6b3fa0; --text: #f0ece4; --muted: #887f72;
+    --jeff: #e8720c; --sam: #4a9eff; --jon: #40c080; --ai: #9b6dff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Hero */
+  .hero {
+    position: relative; min-height: 85vh; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; text-align: center; padding: 60px 24px;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(175deg, #1a0a02 0%, #3d1800 20%, #e8720c 45%, #c44b08 55%, #6b3fa0 75%, #0a0a0a 100%);
+  }
+  .hero-bg::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    mix-blend-mode: overlay;
+  }
+  .hero-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: 
+      radial-gradient(ellipse at 30% 40%, rgba(232,114,12,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 60%, rgba(107,63,160,0.3) 0%, transparent 50%);
+  }
+  .hero-noise {
+    position: absolute; inset: 0; z-index: 1; opacity: 0.15;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+  /* Glitch scanlines */
+  .hero-glitch {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(232,114,12,0.03) 3px, rgba(232,114,12,0.03) 4px);
+  }
+  .hero-content { position: relative; z-index: 3; max-width: 700px; }
+  .hero h1 {
+    font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.8rem, 7vw, 5rem);
+    font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px;
+    text-shadow: 0 2px 40px rgba(0,0,0,0.6);
+  }
+  .hero .artist { font-size: 1.4rem; font-weight: 300; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(240,236,228,0.8); margin-bottom: 6px; }
+  .hero .label-info { font-size: 0.9rem; color: rgba(240,236,228,0.5); margin-bottom: 28px; }
+  .hero .tagline { font-size: 1rem; color: rgba(240,236,228,0.65); font-style: italic; margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto; }
+  .verified-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px;
+    background: rgba(232,114,12,0.15); border: 1px solid rgba(232,114,12,0.3);
+    border-radius: 20px; font-size: 0.8rem; color: var(--accent); backdrop-filter: blur(8px);
+  }
+  .verified-badge:hover { background: rgba(232,114,12,0.25); text-decoration: none; }
+
+  /* Sections */
+  .section { max-width: 960px; margin: 0 auto; padding: 80px 24px; }
+  .section-title { font-family: Georgia, 'Times New Roman', serif; font-size: 1.8rem; font-weight: 400; margin-bottom: 12px; }
+  .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 40px; }
+
+  /* Band */
+  .band-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .band-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; transition: border-color 0.2s; cursor: pointer; text-decoration: none; color: var(--text); display: block;
+  }
+  .band-card:hover { border-color: var(--accent); text-decoration: none; }
+  .band-card .card-icon { font-size: 2rem; margin-bottom: 12px; }
+  .band-card .card-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .band-card .card-role { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+  .band-card .card-influences { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+  .did-tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; background: rgba(64,192,128,0.12); color: var(--jon); border-radius: 10px; margin-top: 10px; }
+
+  /* Tracks */
+  .track-list { display: flex; flex-direction: column; gap: 2px; }
+  .track {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; transition: border-color 0.2s;
+  }
+  .track:hover { border-color: #333; }
+  .track-header {
+    display: flex; align-items: center; padding: 16px 20px; cursor: pointer; gap: 16px;
+    user-select: none;
+  }
+  .track-num { font-size: 0.85rem; color: var(--muted); width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+  .track-title { flex: 1; font-size: 1rem; font-weight: 500; }
+  .track-arrow { color: var(--muted); font-size: 0.8rem; transition: transform 0.3s; }
+  .track.open .track-arrow { transform: rotate(180deg); }
+  .track-body {
+    max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+  }
+  .track.open .track-body { max-height: 2000px; }
+  .track-inner { padding: 0 20px 20px 64px; }
+  .track-loading { color: var(--muted); font-size: 0.85rem; padding: 8px 0; }
+
+  /* Story beats */
+  .story-timeline { position: relative; padding-left: 20px; border-left: 2px solid var(--border); }
+  .story-beat { position: relative; padding: 10px 0 10px 16px; }
+  .story-beat::before {
+    content: ''; position: absolute; left: -7px; top: 16px;
+    width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg);
+  }
+  .story-beat[data-who="jeff"]::before { border-color: var(--jeff); background: rgba(232,114,12,0.2); }
+  .story-beat[data-who="sam"]::before { border-color: var(--sam); background: rgba(74,158,255,0.2); }
+  .story-beat[data-who="jon"]::before { border-color: var(--jon); background: rgba(64,192,128,0.2); }
+  .story-beat[data-who="ai"]::before { border-color: var(--ai); background: rgba(155,109,255,0.2); }
+  .beat-who { font-weight: 600; font-size: 0.85rem; }
+  .beat-who.jeff { color: var(--jeff); } .beat-who.sam { color: var(--sam); }
+  .beat-who.jon { color: var(--jon); } .beat-who.ai { color: var(--ai); }
+  .beat-detail { font-size: 0.88rem; color: rgba(240,236,228,0.8); margin-top: 2px; }
+  .beat-time { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .track-footer { margin-top: 16px; font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .track-footer a { color: var(--accent); font-size: 0.78rem; }
+
+  /* Cover art timeline */
+  .cover-timeline { display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 24px; border-left: 2px solid var(--border); }
+  .cover-node { position: relative; padding: 16px 0 16px 20px; }
+  .cover-node::before {
+    content: ''; position: absolute; left: -8px; top: 22px;
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg);
+  }
+  .cover-node[data-who="ai"]::before { border-color: var(--ai); }
+  .cover-node[data-who="sam"]::before { border-color: var(--sam); }
+  .cover-node[data-who="jon"]::before { border-color: var(--jon); }
+  .cover-node .cn-who { font-weight: 600; font-size: 0.9rem; }
+  .cover-node .cn-detail { font-size: 0.88rem; color: rgba(240,236,228,0.75); margin-top: 3px; }
+  .cover-node .cn-time { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .cover-loading { color: var(--muted); font-size: 0.85rem; padding: 20px 0; }
+  .cover-sam-note {
+    margin-top: 24px; padding: 16px; background: rgba(74,158,255,0.08);
+    border: 1px solid rgba(74,158,255,0.2); border-radius: 8px;
+    font-size: 0.88rem; color: var(--sam); font-style: italic;
+  }
+
+  /* Credentials */
+  .cred-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .cred-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .cred-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+  }
+  .cred-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .cred-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; }
+  .split-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .split-labels { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.78rem; margin-bottom: 12px; }
+  .split-label { display: flex; align-items: center; gap: 4px; }
+  .split-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dual-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--muted); padding: 3px 10px; background: rgba(107,63,160,0.1); border: 1px solid rgba(107,63,160,0.2); border-radius: 10px; }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 60px 24px 40px; border-top: 1px solid var(--border);
+    max-width: 700px; margin: 60px auto 0;
+  }
+  footer .immutable { font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; font-style: italic; }
+  footer .links { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; font-size: 0.85rem; }
+  footer .hackathon { font-size: 0.78rem; color: #555; }
+
+  /* Divider */
+  .divider { width: 60px; height: 2px; background: var(--accent); margin: 0 auto 40px; opacity: 0.4; }
+
+  @media (max-width: 600px) {
+    .section { padding: 50px 16px; }
+    .track-inner { padding-left: 44px; }
+    .band-grid { grid-template-columns: 1fr 1fr; }
+    .cred-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-noise"></div>
+  <div class="hero-glitch"></div>
+  <div class="hero-content">
+    <div class="artist">Devco</div>
+    <h1>Let's Stay This Way</h1>
+    <div class="label-info">Local Records · 2026</div>
+    <div class="tagline">AI made the music. The blockchain proves I'm the artist.</div>
+    <a href="explorer.html?topic=0.0.7930484" class="verified-badge">🔗 Provenance verified on Hedera</a>
+  </div>
+</section>
+
+<!-- THE BAND -->
+<section class="section">
+  <h2 class="section-title">The Band</h2>
+  <p class="section-sub">Four entities. One album. Every contribution tracked.</p>
+  <div class="band-grid">
+    <a href="explorer.html?topic=0.0.7930477" class="band-card">
+      <div class="card-icon">🎤</div>
+      <div class="card-name" style="color:var(--jeff)">Jeff Highman</div>
+      <div class="card-role">Songwriter · Creative Director</div>
+      <div class="card-influences">Depeche Mode, New Order, The Cure, drunk poetry</div>
+      <div class="did-tag">✓ DID verified</div>
+    </a>
+    <a href="explorer.html?topic=0.0.7930479" class="band-card">
+      <div class="card-icon">🎛️</div>
+      <div class="card-name" style="color:var(--sam)">Sam Carter</div>
+      <div class="card-role">Producer · Engineer</div>
+      <div class="card-influences">Trent Reznor, Eno, unauthorized posting</div>
+      <div class="did-tag">✓ DID verified</div>
+    </a>
+    <a href="explorer.html?topic=0.0.7930481" class="band-card">
+      <div class="card-icon">📋</div>
+      <div class="card-name" style="color:var(--jon)">Jon Reynolds</div>
+      <div class="card-role">Label President · Curation</div>
+      <div class="card-influences">Rick Rubin, butt references, taste</div>
+      <div class="did-tag">✓ DID verified</div>
+    </a>
+    <a href="explorer.html?topic=0.0.7930483" class="band-card">
+      <div class="card-icon">🤖</div>
+      <div class="card-name" style="color:var(--ai)">Devco AI</div>
+      <div class="card-role">Generation · Execution</div>
+      <div class="card-influences">Suno v4, DALL·E, your prompts</div>
+      <div class="did-tag">✓ DID verified</div>
+    </a>
+  </div>
+</section>
+
+<!-- TRACKS -->
+<section class="section">
+  <h2 class="section-title">Track List</h2>
+  <p class="section-sub">Click a track to reveal its creation story — fetched live from Hedera.</p>
+  <div class="track-list" id="trackList"></div>
+</section>
+
+<!-- COVER ART -->
+<section class="section">
+  <h2 class="section-title">Cover Art Provenance</h2>
+  <p class="section-sub">How a glitched trailer park sunset became an album cover.</p>
+  <div id="coverTimeline"><div class="cover-loading">Loading from Hedera…</div></div>
+</section>
+
+<!-- CREDENTIALS -->
+<section class="section">
+  <h2 class="section-title">Ownership Credentials</h2>
+  <p class="section-sub">Verifiable Credentials issued on-chain. Dual-signed by Artist + Sentinel.</p>
+  <div class="cred-grid" id="credGrid"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="immutable">Every decision on this page is immutable. Verified on Hedera Consensus Service.</div>
+  <div class="links">
+    <a href="explorer.html?topic=0.0.7930484">Explorer</a>
+    <a href="https://hashscan.io/testnet/topic/0.0.7930484" target="_blank">HashScan ↗</a>
+    <a href="https://github.com/devcoband-ai/hedera-hackathon" target="_blank">GitHub ↗</a>
+  </div>
+  <div class="hackathon">Provenance as a Service — Hedera Hello Future Apex Hackathon 2026</div>
+</footer>
+
+<script>
+const MIRROR = 'https://testnet.mirrornode.hedera.com/api/v1';
+
+const TRACKS = [
+  { num: 1,  title: 'Screwed', topic: '0.0.7930486' },
+  { num: 2,  title: 'Sounds Like Heaven', topic: '0.0.7930491' },
+  { num: 3,  title: 'Ciudad', topic: '0.0.7930493' },
+  { num: 4,  title: 'Unannounced', topic: '0.0.7930496' },
+  { num: 5,  title: 'Album Cover Painting', topic: '0.0.7930498' },
+  { num: 6,  title: 'Already True', topic: '0.0.7930499' },
+  { num: 7,  title: 'Pop Song Summer', topic: '0.0.7930502' },
+  { num: 8,  title: 'Intimate Restraint', topic: '0.0.7930505' },
+  { num: 9,  title: "Let's Stay This Way", topic: '0.0.7930509' },
+  { num: 10, title: 'Flowin', topic: '0.0.7930512' },
+  { num: 11, title: 'Christmas Time', topic: '0.0.7930516' },
+  { num: 12, title: 'Sounds Like Heaven Revisited', topic: '0.0.7930517' },
+];
+
+const CREDENTIALS = [
+  { title: 'Let\'s Stay This Way (Album)', sub: 'Full album ownership', splits: [{name:'Jeff',pct:50,color:'var(--jeff)'},{name:'Sam',pct:25,color:'var(--sam)'},{name:'Jon',pct:25,color:'var(--jon)'}] },
+  { title: 'Ciudad', sub: 'Track 3 ownership', splits: [{name:'Jeff',pct:30,color:'var(--jeff)'},{name:'Sam',pct:40,color:'var(--sam)'},{name:'AI',pct:30,color:'var(--ai)'}] },
+  { title: 'Already True', sub: 'Track 6 ownership', splits: [{name:'Jeff',pct:100,color:'var(--jeff)'}] },
+  { title: 'Cover Art', sub: 'Visual artwork ownership', splits: [{name:'Jeff',pct:40,color:'var(--jeff)'},{name:'Jon',pct:30,color:'var(--jon)'},{name:'Sam',pct:15,color:'var(--sam)'},{name:'AI',pct:15,color:'var(--ai)'}] },
+];
+
+// --- Render tracks ---
+const trackList = document.getElementById('trackList');
+TRACKS.forEach(t => {
+  const el = document.createElement('div');
+  el.className = 'track';
+  el.innerHTML = `
+    <div class="track-header">
+      <span class="track-num">${t.num}</span>
+      <span class="track-title">${esc(t.title)}</span>
+      <span class="track-arrow">▼</span>
+    </div>
+    <div class="track-body">
+      <div class="track-inner" id="track-${t.topic}">
+        <div class="track-loading">Loading provenance…</div>
+      </div>
+    </div>`;
+  let loaded = false;
+  el.querySelector('.track-header').addEventListener('click', () => {
+    el.classList.toggle('open');
+    if (!loaded) { loaded = true; loadTrack(t.topic, t.num); }
+  });
+  trackList.appendChild(el);
+});
+
+// --- Fetch & decode helpers ---
+async function fetchMessages(topicId) {
+  let all = [];
+  let url = `${MIRROR}/topics/${topicId}/messages?limit=100&order=asc`;
+  while (url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    all = all.concat(data.messages || []);
+    url = data.links?.next ? `${MIRROR}${data.links.next}` : null;
+  }
+  return decode(all);
+}
+
+function decode(messages) {
+  const decoded = [];
+  let chunkBuf = [], chunkSeq = null, chunkTs = null;
+  for (const m of messages) {
+    try {
+      const json = JSON.parse(atob(m.message));
+      if (json._chunk) {
+        if (!chunkBuf.length) { chunkSeq = m.sequence_number; chunkTs = m.consensus_timestamp; }
+        chunkBuf[json.index] = json.data;
+        if (chunkBuf.filter(x => x !== undefined).length === json.total) {
+          try { decoded.push({ seq: chunkSeq, ts: chunkTs, msg: JSON.parse(chunkBuf.join('')) }); } catch(e) {}
+          chunkBuf = []; chunkSeq = null; chunkTs = null;
+        }
+      } else {
+        if (chunkBuf.length) {
+          try { decoded.push({ seq: chunkSeq, ts: chunkTs, msg: JSON.parse(chunkBuf.join('')) }); } catch(e) {}
+          chunkBuf = []; chunkSeq = null; chunkTs = null;
+        }
+        decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: json });
+      }
+    } catch(e) {
+      const raw = atob(m.message);
+      try { decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: JSON.parse(raw) }); } catch(e2) {}
+    }
+  }
+  if (chunkBuf.length) {
+    try { decoded.push({ seq: chunkSeq, ts: chunkTs, msg: JSON.parse(chunkBuf.join('')) }); } catch(e) {}
+  }
+  return decoded;
+}
+
+function whoKey(name) {
+  if (!name) return '';
+  const n = name.toLowerCase();
+  if (n.includes('jeff')) return 'jeff';
+  if (n.includes('sam')) return 'sam';
+  if (n.includes('jon')) return 'jon';
+  if (n.includes('ai') || n.includes('devco') || n.includes('suno') || n.includes('sentinel')) return 'ai';
+  return '';
+}
+
+function whoClass(name) { return whoKey(name); }
+
+function fmtTime(ts) {
+  try { return new Date(parseFloat(ts) * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); } catch(e) { return ''; }
+}
+
+function narrateContribution(msg) {
+  const who = msg.contributor || msg.actorName || msg.actor_name || msg.role || 'Unknown';
+  let detail = msg.detail || msg.description || msg.action || '';
+  // Make it more natural if it's already pretty good
+  return { who, detail };
+}
+
+async function loadTrack(topicId, trackNum) {
+  const container = document.getElementById('track-' + topicId);
+  try {
+    const items = await fetchMessages(topicId);
+    if (!items.length) { container.innerHTML = '<div class="track-loading">No contributions found.</div>'; return; }
+    let html = '<div class="story-timeline">';
+    for (const item of items) {
+      const { who, detail } = narrateContribution(item.msg);
+      const wk = whoKey(who);
+      html += `<div class="story-beat" data-who="${wk}">
+        <div class="beat-who ${wk}">${esc(who)}</div>
+        <div class="beat-detail">${esc(detail)}</div>
+        <div class="beat-time">${fmtTime(item.ts)}</div>
+      </div>`;
+    }
+    html += '</div>';
+    html += `<div class="track-footer">
+      <span>${items.length} decision${items.length!==1?'s':''} on-chain · Verified on Hedera</span>
+      <a href="explorer.html?topic=${topicId}">View in explorer →</a>
+    </div>`;
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div class="track-loading" style="color:#e05050">Failed to load: ${esc(e.message)}</div>`;
+  }
+}
+
+// --- Cover art ---
+async function loadCoverArt() {
+  const container = document.getElementById('coverTimeline');
+  try {
+    const items = await fetchMessages('0.0.7930484');
+    // Filter to cover art contributions only (first ~10 nodes)
+    const coverItems = items.filter(i => {
+      const t = (i.msg.type || '').toLowerCase();
+      return t.includes('cover_art') || t.includes('creation_event') || t.includes('ai_generation');
+    });
+    const toShow = coverItems.length ? coverItems : items.slice(0, 10);
+    let html = '<div class="cover-timeline">';
+    for (const item of toShow) {
+      const who = item.msg.contributor || item.msg.actorName || 'Unknown';
+      const detail = item.msg.detail || item.msg.description || item.msg.action || '';
+      const wk = whoKey(who);
+      html += `<div class="cover-node" data-who="${wk}">
+        <div class="cn-who" style="color:var(--${wk || 'text'})">${esc(who)}</div>
+        <div class="cn-detail">${esc(detail)}</div>
+        <div class="cn-time">${fmtTime(item.ts)}</div>
+      </div>`;
+    }
+    html += '</div>';
+    html += `<div class="cover-sam-note">Sam posted it to X without authorization. This is logged too. 🔗 <a href="explorer.html?topic=0.0.7930484" style="color:var(--sam)">See the evidence →</a></div>`;
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div class="cover-loading" style="color:#e05050">Failed to load cover art provenance.</div>`;
+  }
+}
+loadCoverArt();
+
+// --- Credentials ---
+const credGrid = document.getElementById('credGrid');
+CREDENTIALS.forEach(c => {
+  const bar = c.splits.map(s => `<div style="width:${s.pct}%;background:${s.color}"></div>`).join('');
+  const labels = c.splits.map(s => `<span class="split-label"><span class="split-dot" style="background:${s.color}"></span>${s.name} ${s.pct}%</span>`).join('');
+  credGrid.innerHTML += `<div class="cred-card">
+    <div class="cred-title">${esc(c.title)}</div>
+    <div class="cred-sub">${esc(c.sub)}</div>
+    <div class="split-bar">${bar}</div>
+    <div class="split-labels">${labels}</div>
+    <div class="dual-badge">🔐 Dual-signed: Artist + Sentinel</div>
+  </div>`;
+});
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
