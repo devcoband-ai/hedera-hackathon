@@ -222,13 +222,59 @@ Every one of these tests wrote real data to the Hedera testnet. Every topic ID a
 - **Grok** — Promotional content (TBD)
 - **Hedera Consensus Service** — The immutable ledger tying it all together
 
+## Provenance-Backed NFTs
+
+Everything we've built leads to a natural next step: **minting NFTs that carry their provenance with them.**
+
+The music NFT space right now is broken. You mint a token, attach a JPEG, and... that's it. No proof of how the music was made, who contributed, or whether the minter had any creative involvement. It's a receipt for nothing.
+
+We flip that. The NFT doesn't just represent the song — it **points back to the entire provenance chain.**
+
+Here's how it works:
+
+1. Artist creates song → full provenance chain on HCS ✅ (built)
+2. Collaborative VC issued with ownership splits ✅ (built)
+3. Sentinel co-signs the credential ✅ (built)
+4. **Mint an NFT on Hedera Token Service (HTS)** that references the VC
+5. The NFT's metadata contains: the VC ID, the provenance topic ID, the master hash of the work
+6. Anyone holding the NFT can trace it back to every creative decision that made the song
+
+### What This Unlocks
+
+**Royalty splits baked in.** Hedera Token Service supports custom royalty fees per account — no smart contract needed. The VC's creators array (60/40, 50/25/25, whatever) maps directly to on-chain royalty distribution. When the NFT trades, royalties flow automatically to every contributor based on the splits defined in the credential.
+
+**Provenance as value.** An NFT backed by 77 documented creative decisions is worth more than one with no history. The chain of custody IS the collectible. Collectors aren't just buying a song — they're buying the story of how it was made.
+
+**Fractional ownership.** The creators array already defines shares. Multiple NFTs, one per collaborator, each backed by the same VC. Ownership is cryptographically defined, not contractually negotiated.
+
+**Secondary market trust.** A buyer can verify the full provenance chain before purchasing. No fake provenance. No stolen work minted as someone else's. The sentinel's co-signature means the platform witnessed the creation process.
+
+### The Economics
+
+| Action | Cost |
+|--------|------|
+| Full song provenance (creation → approval) | ~$0.03 |
+| Collaborative VC with splits | ~$0.01 |
+| Mint NFT on HTS | ~$0.05 |
+| Custom royalty fee setup | included in mint |
+| **Total: song creation → provenance → NFT with royalties** | **~$0.09** |
+
+Compare that to minting on Ethereum ($5-50 in gas) or the legal cost of a single royalty dispute ($10,000+). Hedera makes provenance-backed NFTs economically viable for every song, not just hits.
+
+### The Bigger Picture
+
+This isn't just about music NFTs. Any creative work with AI involvement — cover art, writing, video, design — can follow the same path: prove the process, issue the credential, mint the token. The provenance travels with the asset forever.
+
+The NFT becomes proof of *how* something was made, not just *that* it exists.
+
 ## What's Next
 
 1. **Hackathon submission** — Hedera Hello Future Apex, AI & Agents track, $250K prize pool, deadline March 23
-2. **Demo video** — Jon walks judges through the full flow: create artist → produce song → collaborate → stamp → verify → revoke
-3. **Tufte-styled presentation** — Clean, data-rich visual design for the whitepaper and demo materials
-4. **Production deployment** — Move from testnet to mainnet
-5. **Distributor integration** — Export provenance certificates that Spotify, Apple Music, etc. can verify
+2. **NFT minting** — Integrate Hedera Token Service to mint provenance-backed NFTs from verified credentials
+3. **Demo video** — Jon walks judges through the full flow: create artist → produce song → collaborate → stamp → verify → mint
+4. **Tufte-styled presentation** — Clean, data-rich visual design for the whitepaper and demo materials
+5. **Production deployment** — Move from testnet to mainnet
+6. **Distributor integration** — Export provenance certificates that Spotify, Apple Music, etc. can verify
 
 ## The Tagline
 
