@@ -255,7 +255,26 @@ async function loadTopic() {
           decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: json, raw: json });
         }
       } catch(e) {
-        decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: { type: 'Unknown', _raw: atob(m.message) }, raw: m.message });
+        // Try to accumulate raw fragments that might be a split message
+        const raw = atob(m.message);
+        // Check if previous decoded item is a raw fragment we can join
+        if (decoded.length > 0 && decoded[decoded.length-1]._fragment) {
+          const combined = decoded[decoded.length-1]._fragmentData + raw;
+          try {
+            const parsed = JSON.parse(combined);
+            decoded[decoded.length-1] = { seq: decoded[decoded.length-1].seq, ts: decoded[decoded.length-1].ts, msg: parsed, raw: parsed };
+          } catch(e2) {
+            decoded[decoded.length-1]._fragmentData = combined;
+          }
+        } else {
+          // Try parsing as JSON first
+          try {
+            const parsed = JSON.parse(raw);
+            decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: parsed, raw: parsed });
+          } catch(e2) {
+            decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: { type: 'Unknown', _raw: raw }, raw: raw, _fragment: true, _fragmentData: raw });
+          }
+        }
       }
     }
     // Flush any remaining chunks at end
@@ -277,8 +296,9 @@ async function loadTopic() {
       (topicInfo?.created_timestamp ? ` · Created ${fmtTs(topicInfo.created_timestamp)}` : '');
     header.style.display = 'block';
 
-    // Render timeline
+    // Render timeline (skip leftover fragments that got joined)
     for (const item of decoded) {
+      if (item._fragment) continue;
       timeline.innerHTML += renderCard(item);
     }
 
@@ -311,7 +331,7 @@ function getType(msg) {
   if (t === 'artist_registration') return 'ArtistRegistration';
   if (t === 'artistic_lineage') return 'ArtisticLineage';
   if (t === 'creative_manifesto') return 'CreativeManifesto';
-  if (t === 'cover_art_prompt' || t === 'ai_generation_receipt') return 'Contribution';
+  if (t === 'cover_art_prompt' || t === 'ai_generation_receipt' || t === 'creation_event') return 'Contribution';
   if (t === 'album_info' || t === 'track_listing' || t === 'album_registration') return 'AlbumInfo';
   if (msg.type) return msg.type;
   return 'Unknown';
