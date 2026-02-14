@@ -217,26 +217,54 @@ async function loadTopic() {
       if (infoRes.ok) topicInfo = await infoRes.json();
     } catch(e) {}
 
-    // Decode and reassemble
+    // Decode and reassemble chunked messages
     const decoded = [];
     let chunkBuffer = [];
+    let chunkFirstSeq = null;
+    let chunkFirstTs = null;
 
     for (const m of allMessages) {
       try {
         const json = JSON.parse(atob(m.message));
         if (json._chunk) {
-          chunkBuffer.push(json);
-          if (json.index === json.total - 1) {
-            chunkBuffer.sort((a, b) => a.index - b.index);
-            const full = JSON.parse(chunkBuffer.map(c => c.data).join(''));
-            decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: full, raw: full });
+          if (chunkBuffer.length === 0) {
+            chunkFirstSeq = m.sequence_number;
+            chunkFirstTs = m.consensus_timestamp;
+          }
+          chunkBuffer[json.index] = json.data;
+          // Check if we have all chunks
+          if (chunkBuffer.filter(x => x !== undefined).length === json.total) {
+            try {
+              const full = JSON.parse(chunkBuffer.join(''));
+              decoded.push({ seq: chunkFirstSeq, ts: chunkFirstTs, msg: full, raw: full });
+            } catch(e) {
+              decoded.push({ seq: chunkFirstSeq, ts: chunkFirstTs, msg: { type: 'ChunkedData', _note: `${json.total} chunks, failed to parse` }, raw: chunkBuffer.join('') });
+            }
             chunkBuffer = [];
+            chunkFirstSeq = null;
+            chunkFirstTs = null;
           }
         } else {
+          // Flush any pending incomplete chunks
+          if (chunkBuffer.length > 0) {
+            decoded.push({ seq: chunkFirstSeq, ts: chunkFirstTs, msg: { type: 'ChunkedData', _note: `Incomplete: ${chunkBuffer.filter(x=>x).length} chunks received` }, raw: chunkBuffer.join('') });
+            chunkBuffer = [];
+            chunkFirstSeq = null;
+            chunkFirstTs = null;
+          }
           decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: json, raw: json });
         }
       } catch(e) {
         decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: { type: 'Unknown', _raw: atob(m.message) }, raw: m.message });
+      }
+    }
+    // Flush any remaining chunks at end
+    if (chunkBuffer.length > 0) {
+      try {
+        const full = JSON.parse(chunkBuffer.join(''));
+        decoded.push({ seq: chunkFirstSeq, ts: chunkFirstTs, msg: full, raw: full });
+      } catch(e) {
+        decoded.push({ seq: chunkFirstSeq, ts: chunkFirstTs, msg: { type: 'ChunkedData', _note: `${chunkBuffer.filter(x=>x).length} chunks at end` }, raw: chunkBuffer.join('') });
       }
     }
 
@@ -274,8 +302,13 @@ function fmtTs(ts) {
 }
 
 function getType(msg) {
+  const t = (msg.type || '').toLowerCase();
+  if (t === 'contribution' || t === 'cover_art_contribution' || t === 'song_contribution') return 'Contribution';
+  if (t === 'verifiablecredential' || msg.credential) return 'VerifiableCredential';
+  if (t === 'diddocument' || msg.verificationMethod) return 'DIDDocument';
+  if (t === 'revocationnotice') return 'RevocationNotice';
+  if (t === 'album_info' || t === 'track_listing') return 'AlbumInfo';
   if (msg.type) return msg.type;
-  if (msg.credential) return 'VerifiableCredential';
   return 'Unknown';
 }
 
@@ -284,6 +317,7 @@ function typeBadgeClass(t) {
   if (t === 'VerifiableCredential') return 'VerifiableCredential';
   if (t === 'DIDDocument') return 'DIDDocument';
   if (t === 'RevocationNotice') return 'RevocationNotice';
+  if (t === 'AlbumInfo') return 'Contribution';
   return 'other';
 }
 
@@ -296,10 +330,20 @@ function renderCard(item) {
   if (type === 'Contribution') {
     const m = item.msg;
     body = `
-      ${field('Role', m.role)}
-      ${field('Actor', m.actorName || m.actor_name || '—')}
-      ${field('Type', m.actorType || m.actor_type || '')}
-      ${field('Description', m.description || '')}
+      ${field('Contributor', m.contributor || m.actorName || m.actor_name || m.role || '—')}
+      ${field('Action', m.action || m.actorType || m.actor_type || '')}
+      ${field('Detail', m.detail || m.description || '')}
+      ${field('Track', m.trackTitle ? `#${m.trackNumber || ''} ${m.trackTitle}` : '')}
+      ${field('Evidence', m.evidence || '')}
+    `;
+  } else if (type === 'AlbumInfo') {
+    const m = item.msg;
+    body = `
+      ${field('Album', m.album || m.title || '')}
+      ${field('Artist', m.artist || '')}
+      ${field('Label', m.label || '')}
+      ${m.tracks ? '<div style="margin-top:6px">' + m.tracks.map((t,i) => `<div style="color:var(--muted);font-size:0.8rem">${i+1}. ${t.title || t}</div>`).join('') + '</div>' : ''}
+      ${field('Detail', m.detail || '')}
     `;
   } else if (type === 'VerifiableCredential') {
     const vc = item.msg.credential || item.msg;
