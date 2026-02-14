@@ -57,28 +57,33 @@ They talk via HTTP. Rails calls the Node service for anything that touches Heder
 
 ```
 hedera-hackathon/
-├── app/                          # Rails app (MVC)
-│   ├── controllers/              # Songs, Contributions, TopicExplorer
-│   ├── models/                   # Song, Track, Contribution, ProvenanceRecord
-│   ├── services/                 # HederaService (calls Node service), ProvenancePackageService
-│   └── views/                    # UI templates
+├── README.md                     # Project overview and setup
+├── docs/                         # All documentation
+│   ├── WHITEPAPER.md             # Plain-language explanation (~3,500 words)
+│   ├── THESIS.md                 # Academic-ish thesis (~2,800 words)
+│   ├── DIAGRAMS.md               # 10 Mermaid diagrams
+│   ├── INNOVATION.md             # Innovation narrative
+│   ├── FEASIBILITY.md            # Feasibility analysis
+│   ├── GAMEPLAN.md               # Original hackathon strategy
+│   └── JACK.md                   # You are here
+├── platform/                     # Rails app (MVC)
+│   ├── app/                      # Controllers, models, services, views
+│   ├── bin/                      # Rails executables
+│   ├── config/                   # Rails configuration
+│   ├── db/                       # Migrations and schema
+│   ├── Gemfile                   # Ruby dependencies
+│   └── ...
 ├── hedera/                       # Node.js Hedera microservice
 │   ├── server.js                 # Express server — ALL the Hedera logic lives here
 │   ├── .env                      # Credentials (gitignored, never commit)
 │   ├── .sentinel.json            # Platform DID state (gitignored, auto-created)
 │   ├── test-scenarios.js         # 6 trust test scenarios
-│   ├── test-results.txt          # Output from test run
-│   ├── replay-album.js           # "Let's Stay This Way" album replay script
-│   ├── album-replay-results.txt  # Output from album replay
+│   ├── replay-album.js           # Album replay script
 │   └── test-did-sdk.js           # DID SDK spike test
-├── explorer.html                 # Standalone topic viewer (open in browser)
-├── WHITEPAPER.md                 # Plain-language explanation (~3,500 words)
-├── THESIS.md                     # Academic-ish thesis (~2,800 words)
-├── DIAGRAMS.md                   # 10 Mermaid diagrams
-├── GAMEPLAN.md                   # Original hackathon strategy
-├── INNOVATION.md                 # Innovation narrative
-├── FEASIBILITY.md                # Feasibility analysis
-└── JACK.md                       # You are here
+├── viewer/                       # Standalone HTML viewers
+│   ├── album.html                # Album experience (open in browser)
+│   └── explorer.html             # Topic explorer (open in browser)
+└── assets/                       # Images and generated art
 ```
 
 ## Running It Locally
@@ -104,7 +109,7 @@ You'll see:
 
 ### Start the Rails app (separate terminal)
 ```bash
-cd ..                # back to project root
+cd ../platform       # from hedera/, or cd platform/ from project root
 export PATH="/Users/dimension/.local/share/mise/installs/ruby/4.0.1/bin:$PATH"
 bundle install       # first time only
 bin/rails db:create db:migrate  # first time only
@@ -113,7 +118,7 @@ bin/rails server -p 3334
 
 ### View the explorer
 ```bash
-open explorer.html   # standalone, no server needed
+open viewer/explorer.html   # standalone, no server needed
 ```
 
 ## server.js — The Important Endpoints
@@ -135,7 +140,7 @@ open explorer.html   # standalone, no server needed
 ### The Album: "Let's Stay This Way"
 - **Album topic:** [0.0.7930484](https://hashscan.io/testnet/topic/0.0.7930484)
 - 12 tracks, 77 contributions, 4 VCs
-- Paste any topic ID into `explorer.html` to see it rendered
+- Paste any topic ID into `viewer/explorer.html` to see it rendered
 
 ### Test Scenarios
 - 6 scenarios covering solo lifecycle, collab splits, invalid rejection, revocation, sentinel authority, artist identity
@@ -178,14 +183,14 @@ open explorer.html   # standalone, no server needed
 ## Read These (In Order)
 
 1. This file (done ✅)
-2. `WHITEPAPER.md` — The full explanation in plain language
+2. `WHITEPAPER.md` (same docs/ folder) — The full explanation in plain language
 3. `THESIS.md` — The intellectual argument
 4. `DIAGRAMS.md` — Visual architecture (paste into any Mermaid renderer)
-5. `hedera/server.js` — The blockchain logic (read top to bottom, it's well-commented)
-6. `explorer.html` — Open it, click around, see what's on-chain
+5. `../hedera/server.js` — The blockchain logic (read top to bottom, it's well-commented)
+6. `../viewer/explorer.html` — Open it, click around, see what's on-chain
 
 ## Questions?
 
-Run `node hedera/server.js`, open `explorer.html`, and click "Album." Everything we built is right there on Hedera. Immutable. Provable. Yours to present.
+Run `node hedera/server.js`, open `viewer/explorer.html`, and click "Album." Everything we built is right there on Hedera. Immutable. Provable. Yours to present.
 
 You got this. 💪

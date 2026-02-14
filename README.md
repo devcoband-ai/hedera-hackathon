@@ -10,11 +10,11 @@ A real-time provenance platform that uses Hedera Consensus Service, Decentralize
 
 | View | What It Shows |
 |------|--------------|
-| **[Album Experience](album.html)** | "Let's Stay This Way" — 12 tracks, cinematic dark design, provenance stories pulled live from Hedera |
-| **[Topic Explorer](explorer.html)** | Browse any Hedera topic — decode messages, view DIDs, VCs, contributions |
+| **[Album Experience](viewer/album.html)** | "Let's Stay This Way" — 12 tracks, cinematic dark design, provenance stories pulled live from Hedera |
+| **[Topic Explorer](viewer/explorer.html)** | Browse any Hedera topic — decode messages, view DIDs, VCs, contributions |
 | **[HashScan](https://hashscan.io/testnet/topic/0.0.7930484)** | Raw on-chain data for the album topic |
 
-Open `album.html` or `explorer.html` directly in your browser — no server needed. They fetch live from the Hedera mirror node.
+Open `viewer/album.html` or `viewer/explorer.html` directly in your browser — no server needed. They fetch live from the Hedera mirror node.
 
 ### Quick Links (paste into the explorer)
 
@@ -86,10 +86,10 @@ Browser → Rails App (port 3334) → Node.js Hedera Service (port 3335) → Hed
 
 | Document | Description |
 |----------|------------|
-| [WHITEPAPER.md](WHITEPAPER.md) | Plain-language guide (~3,500 words) — start here |
-| [THESIS.md](THESIS.md) | Five-layer trust architecture (~2,800 words) |
-| [DIAGRAMS.md](DIAGRAMS.md) | 10 Mermaid diagrams (use cases, sequences, architecture) |
-| [JACK.md](JACK.md) | Team lead onboarding doc |
+| [WHITEPAPER.md](docs/WHITEPAPER.md) | Plain-language guide (~3,500 words) — start here |
+| [THESIS.md](docs/THESIS.md) | Five-layer trust architecture (~2,800 words) |
+| [DIAGRAMS.md](docs/DIAGRAMS.md) | 10 Mermaid diagrams (use cases, sequences, architecture) |
+| [JACK.md](docs/JACK.md) | Team lead onboarding doc |
 
 ## Test Results
 
@@ -115,15 +115,15 @@ npm install
 node server.js        # port 3335
 
 # 2. Start the Rails app (separate terminal)
-cd ..
+cd ../platform
 export PATH="/Users/dimension/.local/share/mise/installs/ruby/4.0.1/bin:$PATH"
 bundle install
 bin/rails db:create db:migrate
 bin/rails server -p 3334
 
 # 3. Open the viewers (no server needed)
-open album.html       # album experience
-open explorer.html    # topic explorer
+open viewer/album.html       # album experience
+open viewer/explorer.html    # topic explorer
 ```
 
 ## Team

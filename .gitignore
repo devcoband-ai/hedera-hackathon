@@ -37,3 +37,7 @@
 hedera/.env
 hedera/node_modules/
 hedera/bon-buckle-cover.png
+
+# Rails cache
+platform/tmp/
+platform/log/
