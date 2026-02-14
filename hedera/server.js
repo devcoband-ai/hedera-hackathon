@@ -512,6 +512,21 @@ app.post("/credentials/verify", async (req, res) => {
   }
 });
 
+// GET /topics/:topicId/info — Topic metadata from mirror node
+app.get("/topics/:topicId/info", async (req, res) => {
+  try {
+    const { topicId } = req.params;
+    const url = `${MIRROR_BASE}/api/v1/topics/${topicId}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Mirror node returned ${response.status}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Get topic info error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check
 app.get("/health", (_req, res) => {
   res.json({

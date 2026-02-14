@@ -1,0 +1,127 @@
+<style>
+  :root { --te-blue: #4a9eff; --te-gold: #f0c040; --te-green: #40c080; --te-red: #e05050; --te-gray: #666; --te-border: #2a2a2a; --te-muted: #888; }
+  .te-header { background: #1a1a1a; border: 1px solid var(--te-border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .te-header h2 { font-size: 1.3rem; margin-bottom: 8px; }
+  .te-header .meta { color: var(--te-muted); font-size: 0.85rem; }
+  .te-header a { color: var(--te-blue); }
+  .te-timeline { position: relative; padding-left: 32px; }
+  .te-timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: var(--te-border); }
+  .te-card { position: relative; margin-bottom: 16px; background: #1a1a1a; border: 1px solid var(--te-border); border-radius: 10px; padding: 16px 18px; }
+  .te-card::before { content: ''; position: absolute; left: -26px; top: 20px; width: 10px; height: 10px; background: var(--te-border); border-radius: 50%; }
+  .te-card.type-Contribution::before { background: var(--te-blue); }
+  .te-card.type-VerifiableCredential::before { background: var(--te-gold); }
+  .te-card.type-DIDDocument::before { background: var(--te-green); }
+  .te-card.type-RevocationNotice::before { background: var(--te-red); }
+  .te-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .te-seq { background: var(--te-border); color: var(--te-muted); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .te-type { padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #fff; }
+  .te-type.Contribution { background: var(--te-blue); }
+  .te-type.VerifiableCredential { background: var(--te-gold); color: #000; }
+  .te-type.DIDDocument { background: var(--te-green); color: #000; }
+  .te-type.RevocationNotice { background: var(--te-red); }
+  .te-type.other { background: var(--te-gray); }
+  .te-ts { color: var(--te-muted); font-size: 0.8rem; }
+  .te-field { margin-bottom: 4px; font-size: 0.9rem; }
+  .te-label { color: var(--te-muted); font-size: 0.8rem; }
+  .te-did { font-family: monospace; font-size: 0.75rem; word-break: break-all; color: var(--te-green); }
+  .te-revoke { background: #2a1515; border: 1px solid var(--te-red); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .te-share { background: var(--te-gold); color: #000; padding: 1px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; }
+  .te-proof { color: var(--te-gold); font-size: 0.8rem; }
+  .te-footer { text-align: center; padding: 24px 0 8px; color: var(--te-muted); font-size: 0.8rem; border-top: 1px solid var(--te-border); margin-top: 24px; }
+  .te-footer a { color: var(--te-blue); }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>🔍 Topic Explorer</h1>
+  <a href="/explorer.html" target="_blank" class="btn btn-outline-info btn-sm">Open Standalone Explorer ↗</a>
+</div>
+
+<div class="te-header">
+  <h2>
+    <% if @topic_info && @topic_info["memo"].present? %>
+      📋 <%= @topic_info["memo"] %>
+    <% else %>
+      📋 Topic <%= @topic_id %>
+    <% end %>
+  </h2>
+  <div class="meta">
+    <strong><%= @topic_id %></strong> ·
+    <%= @decoded.size %> message<%= @decoded.size != 1 ? 's' : '' %> ·
+    <a href="https://hashscan.io/testnet/topic/<%= @topic_id %>" target="_blank">View on HashScan ↗</a>
+  </div>
+</div>
+
+<% if @decoded.empty? %>
+  <p class="text-muted text-center py-5">No messages found on this topic.</p>
+<% else %>
+  <div class="te-timeline">
+    <% @decoded.each do |item| %>
+      <% msg = item[:msg]
+         type = msg["type"] || (msg["credential"] ? "VerifiableCredential" : "Unknown")
+         cls = %w[Contribution VerifiableCredential DIDDocument RevocationNotice].include?(type) ? type : "other"
+      %>
+      <div class="te-card type-<%= cls %>">
+        <div class="te-card-header">
+          <div>
+            <span class="te-seq">#<%= item[:seq] %></span>
+            <span class="te-type <%= cls %>"><%= type %></span>
+          </div>
+          <div class="te-ts">
+            <% if item[:ts] %>
+              <%= Time.parse(item[:ts]).strftime("%b %d, %Y %H:%M:%S") rescue item[:ts] %>
+            <% end %>
+          </div>
+        </div>
+
+        <% if type == "Contribution" %>
+          <div class="te-field"><span class="te-label">Role:</span> <%= msg["role"] %></div>
+          <div class="te-field"><span class="te-label">Actor:</span> <%= msg["actorName"] || msg["actor_name"] %></div>
+          <div class="te-field"><span class="te-label">Type:</span> <%= msg["actorType"] || msg["actor_type"] %></div>
+          <% if msg["description"].present? %>
+            <div class="te-field"><span class="te-label">Description:</span> <%= msg["description"] %></div>
+          <% end %>
+
+        <% elsif type == "VerifiableCredential" %>
+          <% vc = msg["credential"] || msg
+             cs = vc["credentialSubject"] || {}
+             proofs = Array(vc["proof"])
+          %>
+          <div class="te-field"><span class="te-label">Issuer:</span> <span class="te-did"><%= truncate(vc["issuer"].to_s, length: 50) %></span></div>
+          <div class="te-field"><span class="te-label">Title:</span> <%= cs["title"] %></div>
+          <% if cs["creators"] %>
+            <% cs["creators"].each do |c| %>
+              <div class="te-field" style="padding-left:8px"><%= c["role"] || "creator" %>: <span class="te-did"><%= truncate(c["did"].to_s, length: 40) %></span> <span class="te-share"><%= c["share"] %>%</span></div>
+            <% end %>
+          <% end %>
+          <div class="te-proof">🔐 <%= proofs.size %> proof<%= proofs.size != 1 ? 's' : '' %></div>
+
+        <% elsif type == "DIDDocument" %>
+          <div class="te-did"><%= msg["id"] %></div>
+          <div style="color:var(--te-muted);font-size:0.8rem;margin-top:4px">
+            <%= (msg["verificationMethod"] || []).size %> verification method(s):
+            <%= (msg["verificationMethod"] || []).map { |v| v["type"] }.join(", ") %>
+          </div>
+          <div style="color:var(--te-muted);font-size:0.8rem">
+            <%= (msg["service"] || []).size %> service(s):
+            <%= (msg["service"] || []).map { |s| s["type"] }.join(", ") %>
+          </div>
+
+        <% elsif type == "RevocationNotice" %>
+          <div class="te-revoke">
+            ⚠️ <strong>REVOKED</strong><br>
+            <div class="te-field"><span class="te-label">Reason:</span> <%= msg["reason"] || "No reason given" %></div>
+            <div class="te-field"><span class="te-label">Revoked By:</span> <span class="te-did"><%= msg["revokedBy"] %></span></div>
+          </div>
+
+        <% else %>
+          <div style="color:var(--te-muted);font-size:0.8rem">Unknown message type</div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="te-footer">
+  Powered by <a href="https://hedera.com" target="_blank">Hedera</a> Mirror Node ·
+  <a href="https://hashscan.io/testnet/topic/<%= @topic_id %>" target="_blank">HashScan ↗</a>
+</div>

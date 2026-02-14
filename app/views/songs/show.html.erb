@@ -25,6 +25,7 @@
     <strong>🔗 Hedera Topic:</strong>
     <%= link_to @song.hedera_topic_id, "https://hashscan.io/testnet/topic/#{@song.hedera_topic_id}", target: "_blank", class: "alert-link" %>
     <small class="text-muted ms-2">(immutable provenance ledger)</small>
+    · <%= link_to "🔍 Topic Explorer", topic_explorer_path(topic_id: @song.hedera_topic_id), class: "alert-link" %>
   </div>
 <% end %>
 

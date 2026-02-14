@@ -1,0 +1,366 @@
+<!--
+  Hedera Topic Explorer — Standalone HTML viewer
+  No dependencies, no server needed. Works by opening directly in a browser.
+  CORS is allowed on Hedera's public mirror node API.
+
+  Can be hosted on GitHub Pages — just push this file to a repo and enable Pages.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🔍 Hedera Topic Explorer</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #e0e0e0;
+    --muted: #888;
+    --blue: #4a9eff;
+    --gold: #f0c040;
+    --green: #40c080;
+    --red: #e05050;
+    --gray: #666;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 1.8rem; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+  /* Search bar */
+  .search-bar {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .search-bar input {
+    flex: 1; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 1rem; outline: none;
+  }
+  .search-bar input:focus { border-color: var(--blue); }
+  .search-bar button {
+    padding: 10px 20px; background: var(--blue); color: #fff; border: none;
+    border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600;
+  }
+  .search-bar button:hover { opacity: 0.9; }
+
+  /* Quick links */
+  .quick-links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
+  .quick-links button {
+    padding: 6px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 0.8rem; cursor: pointer;
+  }
+  .quick-links button:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Topic header */
+  .topic-header {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-bottom: 24px; display: none;
+  }
+  .topic-header h2 { font-size: 1.2rem; margin-bottom: 8px; }
+  .topic-header .meta { color: var(--muted); font-size: 0.85rem; }
+  .topic-header a { color: var(--blue); text-decoration: none; }
+  .topic-header a:hover { text-decoration: underline; }
+
+  /* Loading / Error */
+  .loading { text-align: center; padding: 40px; color: var(--muted); display: none; }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border);
+    border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { background: #2a1515; border: 1px solid var(--red); border-radius: 8px;
+    padding: 16px; color: var(--red); margin-bottom: 16px; display: none; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .timeline-item {
+    position: relative; margin-bottom: 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+  }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -26px; top: 20px;
+    width: 10px; height: 10px; background: var(--border); border-radius: 50%;
+  }
+  .timeline-item.type-Contribution::before { background: var(--blue); }
+  .timeline-item.type-VerifiableCredential::before { background: var(--gold); }
+  .timeline-item.type-DIDDocument::before { background: var(--green); }
+  .timeline-item.type-RevocationNotice::before { background: var(--red); }
+
+  .item-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .seq-badge {
+    background: var(--border); color: var(--muted); padding: 2px 8px;
+    border-radius: 4px; font-size: 0.75rem; font-weight: 600;
+  }
+  .type-badge {
+    padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #fff;
+  }
+  .type-badge.Contribution { background: var(--blue); }
+  .type-badge.VerifiableCredential { background: var(--gold); color: #000; }
+  .type-badge.DIDDocument { background: var(--green); color: #000; }
+  .type-badge.RevocationNotice { background: var(--red); }
+  .type-badge.other { background: var(--gray); }
+
+  .timestamp { color: var(--muted); font-size: 0.8rem; }
+  .item-body { font-size: 0.9rem; }
+  .item-body .field { margin-bottom: 4px; }
+  .item-body .label { color: var(--muted); font-size: 0.8rem; }
+  .item-body .value { color: var(--text); }
+  .item-body .did-str { font-family: monospace; font-size: 0.75rem; word-break: break-all; color: var(--green); }
+  .revocation-warning { background: #2a1515; border: 1px solid var(--red); border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .creators-list { margin-top: 4px; }
+  .creator-item { padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .creator-item:last-child { border-bottom: none; }
+  .share-badge { background: var(--gold); color: #000; padding: 1px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; }
+  .proof-count { color: var(--gold); font-size: 0.8rem; }
+  .services-list, .vm-list { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* Raw toggle */
+  .raw-toggle { color: var(--muted); font-size: 0.75rem; cursor: pointer; background: none; border: none; padding: 4px 0; margin-top: 6px; }
+  .raw-toggle:hover { color: var(--blue); }
+  .raw-json { display: none; background: #111; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; margin-top: 6px; font-family: monospace; font-size: 0.7rem;
+    white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; color: var(--muted); }
+
+  /* Footer */
+  .footer { text-align: center; padding: 32px 0 16px; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 32px; }
+  .footer a { color: var(--blue); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .container { padding: 16px 10px; }
+    .search-bar { flex-direction: column; }
+    .search-bar button { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 Hedera Topic Explorer</h1>
+  <p class="subtitle">Browse immutable provenance records on Hedera Consensus Service</p>
+
+  <div class="search-bar">
+    <input type="text" id="topicInput" placeholder="Enter topic ID (e.g. 0.0.7930484)" value="0.0.7930484">
+    <button onclick="loadTopic()">Explore</button>
+  </div>
+
+  <div class="quick-links">
+    <span style="color:var(--muted);font-size:0.8rem;line-height:2;">Quick:</span>
+    <button onclick="go('0.0.7930484')">🎵 Album</button>
+    <button onclick="go('0.0.7930486')">Screwed</button>
+    <button onclick="go('0.0.7930493')">Ciudad</button>
+    <button onclick="go('0.0.7930499')">Already True</button>
+    <button onclick="go('0.0.7928916')">Jon Bon Buckle</button>
+    <button onclick="go('0.0.7928902')">Tacos at 3am</button>
+    <button onclick="go('0.0.7929544')">🛡️ Sentinel</button>
+  </div>
+
+  <div class="error" id="error"></div>
+  <div class="loading" id="loading"><div class="spinner"></div><p style="margin-top:12px">Fetching from Hedera Mirror Node...</p></div>
+
+  <div class="topic-header" id="topicHeader">
+    <h2 id="headerTitle"></h2>
+    <div class="meta" id="headerMeta"></div>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div class="footer">
+    Powered by <a href="https://hedera.com" target="_blank">Hedera</a> Mirror Node ·
+    <a href="https://hashscan.io/testnet" target="_blank">HashScan Explorer</a>
+  </div>
+</div>
+
+<script>
+const MIRROR = 'https://testnet.mirrornode.hedera.com/api/v1';
+
+function go(id) { document.getElementById('topicInput').value = id; loadTopic(); }
+
+async function loadTopic() {
+  const topicId = document.getElementById('topicInput').value.trim();
+  if (!topicId) return;
+
+  const loading = document.getElementById('loading');
+  const error = document.getElementById('error');
+  const header = document.getElementById('topicHeader');
+  const timeline = document.getElementById('timeline');
+
+  error.style.display = 'none';
+  loading.style.display = 'block';
+  header.style.display = 'none';
+  timeline.innerHTML = '';
+
+  try {
+    // Fetch all messages (paginate)
+    let allMessages = [];
+    let url = `${MIRROR}/topics/${topicId}/messages?limit=100&order=asc`;
+    while (url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Mirror node returned ${res.status}`);
+      const data = await res.json();
+      allMessages = allMessages.concat(data.messages || []);
+      url = data.links?.next ? `${MIRROR}${data.links.next}` : null;
+    }
+
+    // Fetch topic info
+    let topicInfo = null;
+    try {
+      const infoRes = await fetch(`${MIRROR}/topics/${topicId}`);
+      if (infoRes.ok) topicInfo = await infoRes.json();
+    } catch(e) {}
+
+    // Decode and reassemble
+    const decoded = [];
+    let chunkBuffer = [];
+
+    for (const m of allMessages) {
+      try {
+        const json = JSON.parse(atob(m.message));
+        if (json._chunk) {
+          chunkBuffer.push(json);
+          if (json.index === json.total - 1) {
+            chunkBuffer.sort((a, b) => a.index - b.index);
+            const full = JSON.parse(chunkBuffer.map(c => c.data).join(''));
+            decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: full, raw: full });
+            chunkBuffer = [];
+          }
+        } else {
+          decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: json, raw: json });
+        }
+      } catch(e) {
+        decoded.push({ seq: m.sequence_number, ts: m.consensus_timestamp, msg: { type: 'Unknown', _raw: atob(m.message) }, raw: m.message });
+      }
+    }
+
+    // Render header
+    const memo = topicInfo?.memo || '';
+    document.getElementById('headerTitle').textContent = memo ? `📋 ${memo}` : `📋 Topic ${topicId}`;
+    document.getElementById('headerMeta').innerHTML =
+      `<strong>${topicId}</strong> · ${decoded.length} message${decoded.length!==1?'s':''} · ` +
+      `<a href="https://hashscan.io/testnet/topic/${topicId}" target="_blank">View on HashScan ↗</a>` +
+      (topicInfo?.created_timestamp ? ` · Created ${fmtTs(topicInfo.created_timestamp)}` : '');
+    header.style.display = 'block';
+
+    // Render timeline
+    for (const item of decoded) {
+      timeline.innerHTML += renderCard(item);
+    }
+
+    if (decoded.length === 0) {
+      timeline.innerHTML = '<p style="color:var(--muted);text-align:center;padding:40px">No messages found on this topic.</p>';
+    }
+
+  } catch(e) {
+    error.textContent = `Error: ${e.message}`;
+    error.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+function fmtTs(ts) {
+  try {
+    const seconds = typeof ts === 'string' && ts.includes('.') ? parseFloat(ts) : Number(ts);
+    return new Date(seconds * 1000).toLocaleString();
+  } catch(e) { return ts; }
+}
+
+function getType(msg) {
+  if (msg.type) return msg.type;
+  if (msg.credential) return 'VerifiableCredential';
+  return 'Unknown';
+}
+
+function typeBadgeClass(t) {
+  if (t === 'Contribution') return 'Contribution';
+  if (t === 'VerifiableCredential') return 'VerifiableCredential';
+  if (t === 'DIDDocument') return 'DIDDocument';
+  if (t === 'RevocationNotice') return 'RevocationNotice';
+  return 'other';
+}
+
+function renderCard(item) {
+  const type = getType(item.msg);
+  const cls = typeBadgeClass(type);
+  const id = 'raw-' + item.seq;
+  let body = '';
+
+  if (type === 'Contribution') {
+    const m = item.msg;
+    body = `
+      ${field('Role', m.role)}
+      ${field('Actor', m.actorName || m.actor_name || '—')}
+      ${field('Type', m.actorType || m.actor_type || '')}
+      ${field('Description', m.description || '')}
+    `;
+  } else if (type === 'VerifiableCredential') {
+    const vc = item.msg.credential || item.msg;
+    const cs = vc.credentialSubject || {};
+    const proofs = Array.isArray(vc.proof) ? vc.proof : (vc.proof ? [vc.proof] : []);
+    body = `
+      ${field('Issuer', truncDid(vc.issuer || ''))}
+      ${field('Title', cs.title || '')}
+      ${cs.creators ? '<div class="creators-list">' + cs.creators.map(c =>
+        `<div class="creator-item">${c.role || 'creator'}: ${truncDid(c.did || '?')} <span class="share-badge">${c.share}%</span></div>`
+      ).join('') + '</div>' : ''}
+      <div class="proof-count">🔐 ${proofs.length} proof${proofs.length!==1?'s':''}</div>
+    `;
+  } else if (type === 'DIDDocument') {
+    const m = item.msg;
+    const vms = m.verificationMethod || [];
+    const svcs = m.service || [];
+    body = `
+      <div class="did-str">${m.id || ''}</div>
+      <div class="vm-list">${vms.length} verification method${vms.length!==1?'s':''}: ${vms.map(v => v.type).join(', ')}</div>
+      <div class="services-list">${svcs.length} service${svcs.length!==1?'s':''}: ${svcs.map(s => s.type).join(', ')}</div>
+    `;
+  } else if (type === 'RevocationNotice') {
+    const m = item.msg;
+    body = `<div class="revocation-warning">
+      ⚠️ <strong>REVOKED</strong><br>
+      ${field('Reason', m.reason || 'No reason given')}
+      ${field('Revoked By', truncDid(m.revokedBy || ''))}
+    </div>`;
+  } else {
+    body = `<div style="color:var(--muted);font-size:0.8rem">Unknown message type</div>`;
+  }
+
+  return `<div class="timeline-item type-${cls}">
+    <div class="item-header">
+      <div><span class="seq-badge">#${item.seq}</span> <span class="type-badge ${cls}">${type}</span></div>
+      <div class="timestamp">${fmtTs(item.ts)}</div>
+    </div>
+    <div class="item-body">${body}</div>
+    <button class="raw-toggle" onclick="document.getElementById('${id}').style.display=document.getElementById('${id}').style.display==='block'?'none':'block'">Toggle raw JSON</button>
+    <div class="raw-json" id="${id}">${escHtml(JSON.stringify(item.raw, null, 2))}</div>
+  </div>`;
+}
+
+function field(label, value) {
+  if (!value) return '';
+  return `<div class="field"><span class="label">${label}:</span> <span class="value">${escHtml(value)}</span></div>`;
+}
+
+function truncDid(d) {
+  if (!d || d.length < 40) return d;
+  return d.substring(0, 30) + '...' + d.substring(d.length - 10);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Auto-load on page open
+window.addEventListener('DOMContentLoaded', loadTopic);
+document.getElementById('topicInput').addEventListener('keydown', e => { if (e.key === 'Enter') loadTopic(); });
+</script>
+</body>
+</html>

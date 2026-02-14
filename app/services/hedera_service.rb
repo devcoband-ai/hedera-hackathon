@@ -58,6 +58,22 @@ class HederaService
     JSON.parse(res.body)
   end
 
+  def self.get_topic_info(topic_id)
+    uri = URI("#{BASE_URL}/topics/#{topic_id}/info")
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
+    JSON.parse(res.body)
+  rescue StandardError => e
+    { "error" => e.message }
+  end
+
+  def self.get_topic_messages(topic_id)
+    uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
+    res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
+    JSON.parse(res.body)
+  rescue StandardError => e
+    []
+  end
+
   def self.get_messages(topic_id)
     uri = URI("#{BASE_URL}/topics/#{topic_id}/messages")
     res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(Net::HTTP::Get.new(uri)) }
