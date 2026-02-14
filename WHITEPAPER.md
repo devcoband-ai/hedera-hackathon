@@ -108,15 +108,40 @@ Here's the key insight: the VC isn't stored in our database. It's written to Hed
 
 ## The Sentinel
 
-Why does the platform need to co-sign? Because without a trusted witness, anyone could claim anything.
+**The problem without a sentinel:**
 
-We call our platform identity the **Sentinel**. It has its own DID (`did:hedera:testnet:..._{0.0.7929544}`), created automatically when the platform starts up. The Sentinel is the trusted witness — it watched the creative process happen in real-time.
+Jon mints an NFT and says "I made this song." You either believe him or you don't. He could have stolen it. He could have typed one word into Suno and called it art. You have no idea. His claim is just... his claim.
 
-When the Sentinel co-signs a credential, it's saying: "I verified this workflow was real. I saw the prompts get written. I saw the iterations happen. I saw the human make creative decisions. This isn't fabricated."
+**The problem with self-attestation:**
 
-Without the Sentinel's signature, a credential won't pass verification. You can't just create a VC with your own key and call it valid — you need the platform to attest that the process actually happened. It's the difference between saying "I have a degree" and having a university confirm it.
+Jon creates a credential that says "I wrote 6 prompts, rejected 3 drafts, and approved the final master." Okay — but he wrote that credential himself. It's like writing your own reference letter. The claims might be true, but there's no independent verification.
 
-Our verification endpoint checks for the Sentinel's signature explicitly. If it's missing, the credential is rejected. This is by design — the Sentinel is the authority that distinguishes real provenance from self-serving claims.
+**What the Sentinel does:**
+
+The Sentinel is the **notary**. It doesn't create music. It doesn't own anything. It watches the process and stamps its signature when the process was legit.
+
+Think of it like a diploma. You can print a piece of paper that says "Harvard, Class of 2026." But without Harvard's signature on it, it's just paper. The university witnessed you doing the work — attending class, passing exams, writing the thesis. Their signature means "we watched this happen."
+
+In our system:
+- **The artist** is the student — they did the creative work
+- **Provenance Studio** is the university — the Sentinel that watched them do it
+- **The Verifiable Credential** is the diploma — signed by both parties
+- **Hedera** is the filing cabinet nobody can break into
+
+The Sentinel has its own DID (`did:hedera:testnet:..._{0.0.7929544}`), created automatically when the platform starts up. Every time an artist logs a contribution, the platform sees it. Every prompt, every rejection, every approval — the Sentinel is watching. When the artist requests a credential, the Sentinel checks: did I actually witness this workflow? If yes, it co-signs. If not, it refuses.
+
+**Concretely, here's what the Sentinel saw when Jon made "Tacos at 3am":**
+
+1. Jon wrote the prompt → Sentinel saw it enter the system
+2. Suno generated a draft → Sentinel logged the AI output
+3. Jon rejected it ("chorus was weak") → Sentinel recorded the human decision
+4. Jon refined the prompt → Sentinel recorded the iteration
+5. Suno generated v2 → Sentinel logged the new output
+6. Jon approved the final → Sentinel recorded the approval
+
+Six decisions. All witnessed. When the credential is issued, the Sentinel's co-signature says: "I watched all six of these happen, in this order, at these times. This is real."
+
+Without the Sentinel's signature, our verification endpoint rejects the credential. Period. You can't self-issue a valid provenance credential any more than you can self-issue a valid diploma. The witness matters.
 
 ## Collaborative Ownership
 
