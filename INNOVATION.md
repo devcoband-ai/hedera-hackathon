@@ -12,80 +12,114 @@ There is no standard for proving the difference. Until now.
 
 ---
 
-## Three Layers of Innovation
+## Five Layers of Innovation
 
-### 1. Solving the Creator's Dilemma: Provenance for AI-Assisted Content
+We didn't start with five layers. We started with one — logging creative decisions to a blockchain. Each layer emerged because the previous one wasn't enough.
 
-**The core problem:** Distributors (Spotify, Apple Music, YouTube) are rejecting AI-generated content. They want proof of human involvement. The "75% human" rule is arbitrary and unmeasurable. No one can define it, let alone prove it.
+### Layer 1: Primitives — Proving the Process
 
-**Our solution:** Every creative decision — the prompt, the edit, the rejection, the iteration, the final selection — is logged as an immutable, timestamped message on a Hedera Consensus Service topic. The iteration *is* the human contribution. We capture it in real-time, creating an unbreakable chain of creative custody.
+**The core problem:** Distributors (Spotify, Apple Music, YouTube) are rejecting AI-generated content. They want proof of human involvement. The "75% human" rule is arbitrary and unmeasurable.
 
-**Why it matters:** For the first time, a creator can hand a distributor a provenance record that says: "Here's every decision I made. Here's the timeline. Here's the proof. It's on-chain and it's immutable."
+**Our solution:** Every creative decision — the prompt, the edit, the rejection, the iteration, the final selection — is logged as an immutable, timestamped message on a Hedera Consensus Service topic. The iteration *is* the human contribution. We capture it in real-time.
 
-**Why Hedera:** Sub-second finality, sub-cent fees, immutable consensus. You can log every creative micro-decision without friction or cost. No other chain makes this economically viable at the granularity creativity demands.
+**What's on-chain:** HCS topics, SHA-256 hashes, DID strings. These are the atoms. Everything else is built from them.
 
----
+**Example:** "Tacos at 3am" has 6 contributions on topic `0.0.7928902`. A distributor sees: this wasn't one-click AI. This was a human directing a creative process through multiple iterations.
 
-### 2. Multimodal Content Provenance for Modern Musicians
-
-**The reality:** A modern musician doesn't just make songs. They generate lyrics, cover art, music videos, social content, promotional materials, merch designs — all increasingly AI-assisted. Every output is a potential copyright liability, and none of them have a provenance chain.
-
-**Our solution:** One creative work, many outputs, one unified provenance record. The Hedera topic for a song doesn't just track the audio — it tracks every artifact in the creative constellation:
-
-- 🎵 **Music** — Suno generations, iterations, final mix
-- ✍️ **Lyrics** — drafts, edits, rewrites (Claude-assisted)
-- 🎨 **Cover art** — image generations, selections (Midjourney/DALL-E)
-- 🎬 **Video** — visual treatments, edits
-- 📱 **Social** — promotional content, posts (Grok-assisted)
-
-Each mode is a branch on the provenance DAG. Each branch has its own chain of human decisions. The whole constellation rolls up to a single, verifiable creative identity.
-
-**Why it matters:** Musicians are multimodal creators now. A provenance system that only tracks audio is solving yesterday's problem. We solve today's.
-
-**Why Hedera:** Topics can reference other topics. The DAG structure maps naturally to Hedera's consensus model — parent topics for the work, child topics for each mode, all linked, all immutable.
+**Cost:** $0.01 per topic, $0.0008 per message. An entire song's provenance chain costs about three cents.
 
 ---
 
-### 3. Collaborative Consensus: Distributed Creative Workflows
+### Layer 2: Ontology — How Things Connect
 
-**The leap:** Creation is rarely solo. A band has five members. A production has a songwriter, a producer, a mixer, an AI engine, a creative director. Each contributes. Each deserves attribution. But today, creative credit is negotiated in contracts and lawyers' offices — after the fact, on paper, with no verifiable proof of who actually did what.
+**The reality:** A modern musician doesn't just make songs. They generate lyrics, cover art, music videos, promotional materials — all increasingly AI-assisted. And creators don't work alone. They have identities, histories, collaborators.
 
-**Our solution:** Multiple creators — human and AI — all assert their contributions to the same work, on the same Hedera topic. The consensus isn't just timestamping — it's *agreement*. Each participant signs their contribution. The provenance record captures:
+**Our solution:** We define the relationships:
+- **Artists** have **DIDs** (Decentralized Identifiers on Hedera)
+- **Songs** have **Topics** (immutable provenance chains)
+- **Contributions** are **Messages** (timestamped creative decisions)
+- **Albums** link to **Tracks** which link to **Artists**
 
-- **Who** contributed (human identity or AI agent identifier)
-- **What** they did (role: lyricist, producer, prompt engineer, mixer)
-- **When** they did it (Hedera consensus timestamp)
-- **What it followed** (parent contribution — forming the DAG)
-- **The evidence** (the actual prompt, lyric, edit, selection)
+Each mode of creation is a branch. Each branch has its own chain of human decisions. The whole constellation rolls up to a verifiable creative identity.
 
-A band could have five members, two AI tools, and a producer — and the provenance record captures every contribution with cryptographic proof and consensus agreement.
-
-**Why it matters:** This is the future of creative IP. Not contracts negotiated after the fact, but real-time, on-chain, multi-party creative consensus. Attribution isn't claimed — it's proven.
-
-**Why Hedera:** This is literally what Hedera Consensus Service was built for — multi-party agreement on ordered events. We're not forcing a blockchain into a creative use case. We're using consensus for actual consensus.
+**Example:** "Let's Stay This Way" — one album topic (`0.0.7930484`) containing 10 cover art contributions, 12 track registrations, and 4 Verifiable Credentials. Each track links to its own topic. Each artist links to their own DID.
 
 ---
 
-### 4. Verifiable Credentials: Portable, Trustless Proof of Authorship
+### Layer 3: Assertions — What Happened
 
-**The gap:** Even with an immutable provenance chain, the certificate is still a file you email to a distributor. They have to trust that the file came from who it says it came from. There's no standard, no interoperability, no cryptographic proof of who issued it.
+**The gap:** Logging decisions is necessary but not sufficient. You need a portable, verifiable *claim* that someone can check without reading the entire chain.
 
-**Our solution:** The provenance certificate becomes a W3C Verifiable Credential (VC), issued by the artist's Hedera Decentralized Identifier (DID).
+**Our solution:** W3C Verifiable Credentials. When production is complete, the platform issues a credential that says:
 
-- **Artist DID** — Jon Bon Buckle gets a Hedera DID (`did:hedera:testnet:...`). His artist registration topic becomes his DID document. His creative DNA, his lineage, his manifesto — all anchored to a decentralized identity.
-- **Provenance VC** — When a work is complete, the artist issues a Verifiable Credential that says: "I, Jon Bon Buckle (DID), created this work through this process (Hedera topic), with these artifacts (hashed), using these AI tools."
-- **Cryptographic signature** — The VC is signed with the artist's DID private key. Anyone can verify: this credential was issued by this identity, which has this on-chain history.
-- **Portable standard** — W3C VCs are understood by any compliant verifier. Not our proprietary format. Not a PDF. A credential that travels with the work.
+- **Who** created it (artist DID)
+- **What** they created (song title, topic ID, HashScan link)
+- **How** they created it (contribution count, artifact hashes)
+- **With whom** (collaborators, their DIDs, their ownership shares)
 
-**Why it matters:** A distributor doesn't have to trust our platform. They verify the VC independently:
-1. Check the DID → resolves to a Hedera DID document
-2. Check the signature → cryptographically valid
-3. Check the claims → link to Hedera consensus topic, verify messages exist
-4. Check the artifacts → SHA-256 hashes match the files
+The VC is signed with the artist's key. It's a standard format understood by any compliant verifier. Not our proprietary format. Not a PDF. A credential that travels with the work.
 
-Trust is computed, not assumed.
+**Example:** Ciudad's VC shows Jeff (30%), Sam (40%), and Devco AI (30%) — three parties, their DIDs, their roles, their shares. All in a W3C-standard JSON document.
 
-**Why Hedera:** Hedera has native DID and Verifiable Credentials SDKs built on the Consensus Service. We're not bolting on identity — we're using the infrastructure Hedera already provides for exactly this purpose. DIDs resolve through HCS topics. VCs anchor to HCS messages. It's the same service we're already using, extended to identity.
+---
+
+### Layer 4: Sentinels — Who Gets to Say So
+
+**The problem with self-attestation:** An artist can create a credential that says "I made this masterpiece through 50 iterations of creative genius." But they wrote that credential themselves. It's like writing your own reference letter.
+
+**Our solution: The Sentinel.** The platform has its own DID — a **notary** that watches every creative decision happen in real-time. When a credential is issued, the Sentinel co-signs it, attesting: "I witnessed this workflow. The prompts were written. The iterations happened. The human made creative decisions. This is real."
+
+Think of it like a diploma. You can print a piece of paper that says "Harvard, Class of 2026." But without Harvard's signature, it's just paper. The university witnessed you doing the work. Their signature means it happened.
+
+Every credential in our system carries **dual proof:**
+1. **Artist signature** — "I made this" (assertionMethod)
+2. **Sentinel signature** — "I watched them make it" (authentication)
+
+Without both, verification fails. You can't self-issue a valid credential any more than you can self-issue a valid diploma.
+
+**What the Sentinel enables:**
+- **Collaborative consensus** — Multiple artists, each with a DID, each signing the same credential. The Sentinel validates that all required parties consented. Ownership splits (must total 100%) are enforced before the Sentinel will co-sign.
+- **Trust revocation** — When trust breaks down (ownership dispute, fraud discovered), a RevocationNotice is submitted to the topic. You can't delete from Hedera — that's the point. The audit trail shows both: the credential AND the revocation. The full truth, permanently.
+- **Tamper detection** — Change one character in a signed credential and both signatures fail. Our verification endpoint catches it instantly.
+
+**Tested and proven:** We ran 6 scenarios on live Hedera testnet:
+1. ✅ Solo artist full lifecycle
+2. ✅ Collaborative split (60/40 with dual-signed VC)
+3. ✅ Invalid splits rejected (110%, 90%, 0% — Sentinel refuses)
+4. ✅ Trust revocation (credential + revocation on-chain)
+5. ✅ Sentinel authority (tampered VCs fail, missing Sentinel fails)
+6. ✅ Artist identity provenance (creative DNA on-chain)
+
+---
+
+### Layer 5: State — What We Compute from Truth
+
+**The synthesis:** State isn't stored — it's computed. Given the primitives, the ontology, the assertions, and the sentinel attestations, we can compute:
+
+- **Provenance chains** — The complete history of how a work was made
+- **Ownership splits** — Who owns what, cryptographically proven
+- **Verification results** — Is this credential valid? Did the Sentinel co-sign? Do the shares add up?
+- **Trust status** — Has this credential been revoked? When? By whom? Why?
+
+This is the layer the outside world sees. A distributor runs verification. A collector checks provenance. A label confirms ownership. They don't need to understand DIDs or HCS topics — they get a verdict: **valid** or **not valid**, with receipts.
+
+---
+
+## The NFT Extension
+
+Everything above leads to a natural next step: **provenance-backed NFTs.**
+
+Current music NFTs are broken — you mint a token, attach a JPEG, that's it. No proof of creation. Our VCs become the NFT's provenance backbone:
+
+1. Full provenance chain on HCS ✅
+2. Collaborative VC with ownership splits ✅
+3. Sentinel co-signature ✅
+4. **Mint NFT on Hedera Token Service** referencing the VC
+5. Royalty splits from the creators array map directly to HTS custom fees
+
+Cost: song creation → full provenance → NFT with automatic royalties = **~$0.09**
+
+The NFT doesn't just represent the song. It carries the entire creative history with it.
 
 ---
 
@@ -93,22 +127,28 @@ Trust is computed, not assumed.
 
 | Layer | Problem | Solution | Hedera Service |
 |-------|---------|----------|----------------|
-| **Provenance** | Can't prove human involvement in AI-assisted creation | Real-time logging of every creative decision | Consensus Service (topics + messages) |
-| **Multimodal** | Musicians create across many modes, none have provenance | Unified provenance DAG spanning all creative outputs | Linked topics (parent/child) |
-| **Collaborative** | Multi-party creative credit is unverifiable | On-chain contribution assertions with consensus agreement | Multi-party message submission + signatures |
-| **Verifiable Identity** | Certificates are untrusted files with no standard | W3C Verifiable Credentials issued by artist DIDs | DID SDK + Consensus Service |
-
-## The Tagline
-
-**"AI made the music. The blockchain proves I'm the artist."**
+| **Primitives** | Can't prove human involvement | Real-time logging of every decision | HCS topics + messages |
+| **Ontology** | Disconnected creative artifacts | Artists→DIDs, Songs→Topics, Contributions→Messages | Linked topics |
+| **Assertions** | No portable proof of authorship | W3C Verifiable Credentials | HCS + DID SDK |
+| **Sentinels** | Self-attestation isn't trustworthy | Platform DID co-signs as notary/witness | Sentinel DID + dual proof |
+| **State** | Raw data isn't actionable | Computed verification, ownership, trust status | Mirror Node + verification |
+| **NFTs** | Tokens without provenance | VCs become NFT metadata, royalties from splits | HTS + HCS |
 
 ## The Meta-Innovation
 
-This platform doesn't just solve a music problem. It's a general-purpose **provenance protocol for AI-assisted creation**. Music is the beachhead — the most urgent, most visible, most broken domain. But the same pattern applies to:
+This platform doesn't just solve a music problem. It's a general-purpose **provenance protocol for AI-assisted creation**. Music is the beachhead — the most urgent, most visible, most broken domain. But the same architecture applies to:
 
 - AI-assisted writing (prove you wrote the book)
 - AI-assisted design (prove you directed the visual)
 - AI-assisted code (prove you engineered the solution)
 - AI-assisted research (prove you drove the discovery)
 
-We start with music because musicians are getting rejected *today*. We build for everyone.
+The five layers are domain-agnostic. Swap "artist" for "author" and "song" for "manuscript" — the trust architecture holds.
+
+## The Tagline
+
+**"AI made the music. The blockchain proves I'm the artist."**
+
+---
+
+*Every claim in this document is backed by on-chain evidence. [Verify it yourself.](https://hashscan.io/testnet/topic/0.0.7930484)*
